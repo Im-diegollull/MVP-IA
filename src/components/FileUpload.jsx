@@ -49,7 +49,7 @@ export default function FileUpload({ onFileLoaded }) {
           <span className="text-slate-400 text-sm font-medium">IA Aplicada — Grupo 3</span>
         </div>
         <h1 className="text-3xl font-bold text-white mb-1">Sistema de Soporte a la Decisión</h1>
-        <p className="text-slate-400 text-sm">Gestión Inteligente de Solicitudes Especiales · Facultad de Ingeniería · U. de los Andes</p>
+        <p className="text-slate-400 text-sm">Gestión Inteligente de Solicitudes Especiales ·</p>
       </div>
 
       <div

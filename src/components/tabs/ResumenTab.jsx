@@ -48,7 +48,7 @@ export default function ResumenTab({ m1, m2, m3, hasEstado }) {
           objective="≥ 90%"
           cumple={kpi1Cumple}
           description={m1.kpi1Details ? `${m1.kpi1Details.C} de ${m1.kpi1Details.M} marcados como rechazo coinciden con coordinadora` : null}
-          responsible="Renato Aguirre"
+          
         />
         <KPICard
           title="KPI 2 — Pares de Ramos Recurrentes"
@@ -56,7 +56,7 @@ export default function ResumenTab({ m1, m2, m3, hasEstado }) {
           objective="≥ 15 pares"
           cumple={kpi2Cumple}
           description={`${m2.numPares} pares únicos identificados, ${m2.kpi2} aparecen en 2+ períodos`}
-          responsible="Cristóbal Gazitúa"
+          
         />
         <KPICard
           title="KPI 3 — Sobrecupos Anticipados"
@@ -64,7 +64,7 @@ export default function ResumenTab({ m1, m2, m3, hasEstado }) {
           objective="≥ 6 ramos"
           cumple={kpi3Cumple}
           description={`${m3.numSugeridos} ramos sugeridos, ${m3.kpi3} confirmaron alta demanda en ${m3.latestPeriod}`}
-          responsible="Diego Llull"
+          
         />
       </div>
 

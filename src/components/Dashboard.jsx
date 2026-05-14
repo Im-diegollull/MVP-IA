@@ -6,10 +6,10 @@ import Modulo3Tab from './tabs/Modulo3Tab.jsx'
 import { exportToExcel } from '../utils/exportExcel.js'
 
 const TABS = [
-  { id: 'resumen', label: 'Resumen', icon: '📊' },
-  { id: 'modulo1', label: 'Módulo 1 — Filtrado', icon: '🔍' },
-  { id: 'modulo2', label: 'Módulo 2 — Patrones', icon: '🧠' },
-  { id: 'modulo3', label: 'Módulo 3 — Sobrecupos', icon: '📈' },
+  { id: 'resumen', label: 'Resumen', },
+  { id: 'modulo1', label: 'Módulo 1 — Filtrado',  },
+  { id: 'modulo2', label: 'Módulo 2 — Patrones',  },
+  { id: 'modulo3', label: 'Módulo 3 — Sobrecupos',  },
 ]
 
 export default function Dashboard({ m1, m2, m3, hasEstado, fileName, onReset }) {
