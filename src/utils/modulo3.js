@@ -63,7 +63,7 @@ export function runModulo3(rows) {
     const deHist = stddev(counts)
     const umbral = mediaHist + deHist
     const ultimaDemanda = entry.periodos.get(latestPeriod) || 0
-    const tieneAltaDemanda = ultimaDemanda > umbral && umbral > 0
+    const tieneAltaDemanda = ultimaDemanda >= umbral && umbral > 0
 
     return {
       curso: entry.curso,

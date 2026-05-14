@@ -55,7 +55,7 @@ export default function Modulo3Tab({ m3 }) {
         {' '}Para cada ramo se calcula la <strong className="text-white">media histórica</strong> y{' '}
         <strong className="text-white">desviación estándar</strong> de solicitudes por período.
         Se sugieren ramos con ≥5 solicitudes totales en ≥2 períodos.
-        Alta demanda confirmada: solicitudes en {m3.latestPeriod || 'último período'} {'>'} (media + DE).
+        Alta demanda confirmada: solicitudes en {m3.latestPeriod || 'último período'} ≥ (media + DE).
         Período analizado: <strong className="text-white">{m3.latestPeriod || 'N/A'}</strong>.
       </div>
 
