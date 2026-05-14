@@ -15,7 +15,34 @@ function getField(row, ...keys) {
   return ''
 }
 
-export function runModulo2(rows) {
+export function runModulo2(rows, catalogoRows = []) {
+  // Build NRC → nombre lookup from ALL solicitudes rows (not just topes)
+  const nrcToNombreSolicitudes = new Map()
+  rows.forEach(r => {
+    const nrc = getField(r, 'NRC', 'nrc')
+    const nombre = getField(r, 'Nombre del Curso', 'Nombre del curso', 'nombre del curso')
+    if (nrc && nombre && !nrcToNombreSolicitudes.has(nrc)) {
+      nrcToNombreSolicitudes.set(nrc, nombre)
+    }
+  })
+
+  // Build NRC → nombre lookup from Catálogo PE (columna CURSO)
+  const nrcToNombreCatalogo = new Map()
+  catalogoRows.forEach(r => {
+    const nrc = getField(r, 'NRC', 'nrc')
+    const curso = getField(r, 'CURSO', 'curso', 'Nombre del Curso', 'nombre del curso')
+    if (nrc && curso && !nrcToNombreCatalogo.has(nrc)) {
+      nrcToNombreCatalogo.set(nrc, curso)
+    }
+  })
+
+  function resolveNombreConflicto(nrcConflicto, rawConflicto) {
+    if (rawConflicto && rawConflicto.toUpperCase() !== 'SYSDEL') return rawConflicto
+    if (nrcToNombreSolicitudes.has(nrcConflicto)) return nrcToNombreSolicitudes.get(nrcConflicto)
+    if (nrcToNombreCatalogo.has(nrcConflicto)) return nrcToNombreCatalogo.get(nrcConflicto)
+    return `NRC ${nrcConflicto}`
+  }
+
   // Filter topes de horario
   const topes = rows.filter(r => {
     const cat = getField(r, 'Error Categoría', 'Error Categoria', 'Error categoria')
@@ -31,7 +58,8 @@ export function runModulo2(rows) {
     const nrcConflicto = extractNRCFromError(errorStr)
     const periodo = getField(row, 'Catalogo', 'catalogo', 'Período', 'periodo')
     const cursoPrincipal = getField(row, 'Nombre del Curso', 'Nombre del curso', 'nombre del curso')
-    const cursoConflicto = errorStr.split('-').slice(1).join('-').trim() || `NRC ${nrcConflicto}`
+    const rawConflicto = errorStr.split('-').slice(1).join('-').trim()
+    const cursoConflicto = resolveNombreConflicto(nrcConflicto, rawConflicto)
 
     if (!nrcSolicitado || !nrcConflicto) return
 

@@ -2,9 +2,12 @@ import React, { useState, useRef } from 'react'
 
 export default function FileUpload({ onFileLoaded }) {
   const [dragging, setDragging] = useState(false)
+  const [draggingCat, setDraggingCat] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [catalogoFile, setCatalogoFile] = useState(null)
   const inputRef = useRef()
+  const inputCatRef = useRef()
 
   const handleFile = async (file) => {
     if (!file) return
@@ -15,14 +18,28 @@ export default function FileUpload({ onFileLoaded }) {
     setLoading(true)
     setError(null)
     try {
-      const { parseExcelFile } = await import('../utils/parseExcel.js')
+      const { parseExcelFile, parseCatalogoFile } = await import('../utils/parseExcel.js')
       const result = await parseExcelFile(file)
-      onFileLoaded(result, file.name)
+      let catalogoRows = []
+      if (catalogoFile) {
+        catalogoRows = await parseCatalogoFile(catalogoFile)
+      }
+      onFileLoaded(result, file.name, catalogoRows)
     } catch (e) {
       setError(`Error al leer el archivo: ${e.message}`)
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleCatalogoFile = (file) => {
+    if (!file) return
+    if (!file.name.match(/\.(xlsx|xls)$/i)) {
+      setError('El catálogo debe ser un archivo Excel (.xlsx o .xls)')
+      return
+    }
+    setCatalogoFile(file)
+    setError(null)
   }
 
   const onDrop = (e) => {
@@ -32,8 +49,19 @@ export default function FileUpload({ onFileLoaded }) {
     handleFile(file)
   }
 
+  const onDropCatalogo = (e) => {
+    e.preventDefault()
+    setDraggingCat(false)
+    const file = e.dataTransfer.files[0]
+    handleCatalogoFile(file)
+  }
+
   const onInputChange = (e) => {
     handleFile(e.target.files[0])
+  }
+
+  const onCatInputChange = (e) => {
+    handleCatalogoFile(e.target.files[0])
   }
 
   return (
@@ -79,6 +107,33 @@ export default function FileUpload({ onFileLoaded }) {
               <p className="text-slate-500 text-xs mt-2">Acepta .xlsx y .xls — funciona con o sin columna Estado</p>
             </div>
           </>
+        )}
+      </div>
+
+      {/* Optional: Catálogo PE */}
+      <div
+        className={`w-full max-w-lg border border-dashed rounded-xl p-4 flex items-center gap-3 cursor-pointer transition-all duration-200 mt-3
+          ${draggingCat ? 'border-violet-400 bg-violet-950/30' : catalogoFile ? 'border-emerald-600 bg-emerald-950/20' : 'border-slate-700 bg-slate-800/30 hover:border-slate-600'}`}
+        onDragOver={(e) => { e.preventDefault(); setDraggingCat(true) }}
+        onDragLeave={() => setDraggingCat(false)}
+        onDrop={onDropCatalogo}
+        onClick={() => inputCatRef.current?.click()}
+      >
+        <input ref={inputCatRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={onCatInputChange} />
+        <svg className="w-6 h-6 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+            d="M4 6h16M4 10h16M4 14h10M4 18h6" />
+        </svg>
+        <div className="min-w-0">
+          <p className="text-xs font-medium text-slate-400">
+            Catálogo PE <span className="text-slate-600">(opcional)</span>
+          </p>
+          <p className="text-xs text-slate-500 truncate">
+            {catalogoFile ? catalogoFile.name : 'Arrastra Catálogo_PE_2026.xlsx para mejorar nombres de NRC'}
+          </p>
+        </div>
+        {catalogoFile && (
+          <span className="ml-auto text-emerald-400 text-xs shrink-0">Listo</span>
         )}
       </div>
 

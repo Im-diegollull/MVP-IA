@@ -8,9 +8,9 @@ import { runModulo3 } from './utils/modulo3.js'
 export default function App() {
   const [data, setData] = useState(null)
 
-  const handleFileLoaded = ({ rows, headers, hasEstado }, fileName) => {
+  const handleFileLoaded = ({ rows, headers, hasEstado }, fileName, catalogoRows = []) => {
     const m1 = runModulo1(rows, hasEstado)
-    const m2 = runModulo2(rows)
+    const m2 = runModulo2(rows, catalogoRows)
     const m3 = runModulo3(rows)
     setData({ m1, m2, m3, hasEstado, fileName })
   }
