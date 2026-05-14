@@ -1,0 +1,76 @@
+import * as XLSX from 'xlsx'
+
+export function exportToExcel(modulo1Result, modulo2Result, modulo3Result, kpi1, kpi2, kpi3) {
+  const wb = XLSX.utils.book_new()
+
+  // Sheet 1: Solicitudes Clasificadas
+  const sheet1Data = modulo1Result.clasificadas.map(r => ({
+    'ID Anónimo': r._id || '',
+    'Carrera': r['Carrera'] || '',
+    'Catalogo': r['Catalogo'] || '',
+    'NRC': r['NRC'] || '',
+    'Nombre del Curso': r['Nombre del Curso'] || '',
+    'Error Categoría': r['Error Categoría'] || r['Error Categoria'] || '',
+    'Clasificación Sistema': r._clasificacion || '',
+    'Estado Real': r['Estado'] || 'N/A',
+  }))
+  const ws1 = XLSX.utils.json_to_sheet(sheet1Data)
+  XLSX.utils.book_append_sheet(wb, ws1, 'Solicitudes Clasificadas')
+
+  // Sheet 2: Pares Recurrentes
+  const sheet2Data = modulo2Result.recurrentes.map(p => ({
+    'Par de Ramos': p.displayKey,
+    'NRC 1': p.nrc1,
+    'NRC 2': p.nrc2,
+    'Total Solicitudes': p.solicitudes,
+    'N° Períodos': p.numPeriodos,
+    'Períodos': p.periodos.join(', '),
+    'Carreras': p.carreras.join(', '),
+  }))
+  const ws2 = XLSX.utils.json_to_sheet(sheet2Data)
+  XLSX.utils.book_append_sheet(wb, ws2, 'Pares Recurrentes')
+
+  // Sheet 3: Sugerencias Sobrecupo
+  const sheet3Data = modulo3Result.sugeridos.map(c => ({
+    'Nombre del Curso': c.curso,
+    'Total Solicitudes': c.total,
+    'N° Períodos': c.numPeriodos,
+    'Media Histórica': c.mediaHist,
+    'Desv. Estándar': c.deHist,
+    'Umbral (Media+DE)': c.umbral,
+    [`Demanda ${c.latestPeriod}`]: c.ultimaDemanda,
+    'Alta Demanda Confirmada': c.tieneAltaDemanda ? 'Sí' : 'No',
+  }))
+  const ws3 = XLSX.utils.json_to_sheet(sheet3Data)
+  XLSX.utils.book_append_sheet(wb, ws3, 'Sugerencias Sobrecupo')
+
+  // Sheet 4: Resumen KPIs
+  const sheet4Data = [
+    {
+      'KPI': 'KPI 1 - Tasa Detección Correcta Rechazos',
+      'Responsable': 'Renato Aguirre',
+      'Valor': kpi1 !== null ? `${kpi1}%` : 'N/A - Modo Operativo',
+      'Objetivo': '≥ 90%',
+      'Cumple': kpi1 !== null ? (parseFloat(kpi1) >= 90 ? 'Sí' : 'No') : 'N/A',
+    },
+    {
+      'KPI': 'KPI 2 - Pares de Ramos con Conflictos Recurrentes',
+      'Responsable': 'Cristóbal Gazitúa',
+      'Valor': kpi2,
+      'Objetivo': '≥ 15 pares',
+      'Cumple': kpi2 >= 15 ? 'Sí' : 'No',
+    },
+    {
+      'KPI': 'KPI 3 - Ramos con Sobrecupo Anticipado Correctamente',
+      'Responsable': 'Diego Llull',
+      'Valor': kpi3,
+      'Objetivo': '≥ 6 ramos',
+      'Cumple': kpi3 >= 6 ? 'Sí' : 'No',
+    },
+  ]
+  const ws4 = XLSX.utils.json_to_sheet(sheet4Data)
+  XLSX.utils.book_append_sheet(wb, ws4, 'Resumen KPIs')
+
+  // Download
+  XLSX.writeFile(wb, 'Resultados_Sistema_Solicitudes.xlsx')
+}
