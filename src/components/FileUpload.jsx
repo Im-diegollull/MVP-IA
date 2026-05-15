@@ -3,11 +3,14 @@ import React, { useState, useRef } from 'react'
 export default function FileUpload({ onFileLoaded }) {
   const [dragging, setDragging] = useState(false)
   const [draggingCat, setDraggingCat] = useState(false)
+  const [draggingHorario, setDraggingHorario] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [catalogoFile, setCatalogoFile] = useState(null)
+  const [horarioFile, setHorarioFile] = useState(null)
   const inputRef = useRef()
   const inputCatRef = useRef()
+  const inputHorarioRef = useRef()
 
   const handleFile = async (file) => {
     if (!file) return
@@ -18,13 +21,13 @@ export default function FileUpload({ onFileLoaded }) {
     setLoading(true)
     setError(null)
     try {
-      const { parseExcelFile, parseCatalogoFile } = await import('../utils/parseExcel.js')
+      const { parseExcelFile, parseCatalogoFile, parseHorarioFile } = await import('../utils/parseExcel.js')
       const result = await parseExcelFile(file)
       let catalogoRows = []
-      if (catalogoFile) {
-        catalogoRows = await parseCatalogoFile(catalogoFile)
-      }
-      onFileLoaded(result, file.name, catalogoRows)
+      if (catalogoFile) catalogoRows = await parseCatalogoFile(catalogoFile)
+      let horarioRows = []
+      if (horarioFile) horarioRows = await parseHorarioFile(horarioFile)
+      onFileLoaded(result, file.name, catalogoRows, horarioRows)
     } catch (e) {
       setError(`Error al leer el archivo: ${e.message}`)
     } finally {
@@ -42,18 +45,32 @@ export default function FileUpload({ onFileLoaded }) {
     setError(null)
   }
 
+  const handleHorarioFile = (file) => {
+    if (!file) return
+    if (!file.name.match(/\.(xlsx|xls)$/i)) {
+      setError('El horario debe ser un archivo Excel (.xlsx o .xls)')
+      return
+    }
+    setHorarioFile(file)
+    setError(null)
+  }
+
   const onDrop = (e) => {
     e.preventDefault()
     setDragging(false)
-    const file = e.dataTransfer.files[0]
-    handleFile(file)
+    handleFile(e.dataTransfer.files[0])
   }
 
   const onDropCatalogo = (e) => {
     e.preventDefault()
     setDraggingCat(false)
-    const file = e.dataTransfer.files[0]
-    handleCatalogoFile(file)
+    handleCatalogoFile(e.dataTransfer.files[0])
+  }
+
+  const onDropHorario = (e) => {
+    e.preventDefault()
+    setDraggingHorario(false)
+    handleHorarioFile(e.dataTransfer.files[0])
   }
 
   const onInputChange = (e) => {
@@ -62,6 +79,10 @@ export default function FileUpload({ onFileLoaded }) {
 
   const onCatInputChange = (e) => {
     handleCatalogoFile(e.target.files[0])
+  }
+
+  const onHorarioInputChange = (e) => {
+    handleHorarioFile(e.target.files[0])
   }
 
   return (
@@ -133,6 +154,33 @@ export default function FileUpload({ onFileLoaded }) {
           </p>
         </div>
         {catalogoFile && (
+          <span className="ml-auto text-emerald-400 text-xs shrink-0">Listo</span>
+        )}
+      </div>
+
+      {/* Optional: Horario */}
+      <div
+        className={`w-full max-w-lg border border-dashed rounded-xl p-4 flex items-center gap-3 cursor-pointer transition-all duration-200 mt-2
+          ${draggingHorario ? 'border-sky-400 bg-sky-950/30' : horarioFile ? 'border-emerald-600 bg-emerald-950/20' : 'border-slate-700 bg-slate-800/30 hover:border-slate-600'}`}
+        onDragOver={(e) => { e.preventDefault(); setDraggingHorario(true) }}
+        onDragLeave={() => setDraggingHorario(false)}
+        onDrop={onDropHorario}
+        onClick={() => inputHorarioRef.current?.click()}
+      >
+        <input ref={inputHorarioRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={onHorarioInputChange} />
+        <svg className="w-6 h-6 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+        <div className="min-w-0">
+          <p className="text-xs font-medium text-slate-400">
+            Horario <span className="text-slate-600">(opcional — detalle de topes)</span>
+          </p>
+          <p className="text-xs text-slate-500 truncate">
+            {horarioFile ? horarioFile.name : 'Arrastra HORARIO_ING_202610.xlsx para mostrar tipo de clase en topes'}
+          </p>
+        </div>
+        {horarioFile && (
           <span className="ml-auto text-emerald-400 text-xs shrink-0">Listo</span>
         )}
       </div>

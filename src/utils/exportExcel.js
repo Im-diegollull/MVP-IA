@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx'
 
-export function exportToExcel(modulo1Result, modulo2Result, modulo3Result, kpi1, kpi2, kpi3) {
+export function exportToExcel(modulo1Result, modulo2Result, modulo3Result, kpi1, kpi2, kpi3, decisiones = {}, hasEstado = false) {
   const wb = XLSX.utils.book_new()
 
   // Sheet 1: Solicitudes Clasificadas
@@ -12,7 +12,9 @@ export function exportToExcel(modulo1Result, modulo2Result, modulo3Result, kpi1,
     'Nombre del Curso': r['Nombre del Curso'] || '',
     'Error Categoría': r['Error Categoría'] || r['Error Categoria'] || '',
     'Clasificación Sistema': r._clasificacion || '',
-    'Estado Real': r['Estado'] || 'N/A',
+    'Detalle Tope': r._topeDetalle || '',
+    'Estado Real': r['Estado'] || '',
+    'Decisión Coordinadora': hasEstado ? (r['Estado'] || '') : (decisiones[r._origIdx] || 'Pendiente'),
   }))
   const ws1 = XLSX.utils.json_to_sheet(sheet1Data)
   XLSX.utils.book_append_sheet(wb, ws1, 'Solicitudes Clasificadas')
@@ -33,13 +35,9 @@ export function exportToExcel(modulo1Result, modulo2Result, modulo3Result, kpi1,
   // Sheet 3: Sugerencias Sobrecupo
   const sheet3Data = modulo3Result.sugeridos.map(c => ({
     'Nombre del Curso': c.curso,
-    'Total Solicitudes': c.total,
+    'NRC(s)': (c.nrcs || []).join(', '),
     'N° Períodos': c.numPeriodos,
-    'Media Histórica': c.mediaHist,
-    'Desv. Estándar': c.deHist,
-    'Umbral (Media+DE)': c.umbral,
-    [`Demanda ${c.latestPeriod}`]: c.ultimaDemanda,
-    'Alta Demanda Confirmada': c.tieneAltaDemanda ? 'Sí' : 'No',
+    '¿Sobrecupo?': 'Sí',
   }))
   const ws3 = XLSX.utils.json_to_sheet(sheet3Data)
   XLSX.utils.book_append_sheet(wb, ws3, 'Sugerencias Sobrecupo')

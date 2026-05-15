@@ -1,5 +1,5 @@
 # Sistema de Soporte a la Decisión — Solicitudes Especiales
-**IA Aplicada · Grupo 3 · Uandes 2026**
+**IA Aplicada · Grupo 3 ·**
 
 ---
 

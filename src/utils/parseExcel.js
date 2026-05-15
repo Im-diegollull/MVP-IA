@@ -29,6 +29,43 @@ function normalizeHeader(h) {
     .replace(/\s+/g, ' ')
 }
 
+export function parseHorarioFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target.result)
+        const workbook = XLSX.read(data, { type: 'array' })
+        const sheetName = workbook.SheetNames[0]
+        const sheet = workbook.Sheets[sheetName]
+        const raw = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' })
+
+        // Headers at row 14 (index 13) — scan first 20 rows for 'NRC'
+        let headerRowIdx = 13
+        for (let i = 0; i < Math.min(20, raw.length); i++) {
+          const vals = raw[i].map(v => String(v ?? '').trim().toUpperCase())
+          if (vals.includes('NRC')) { headerRowIdx = i; break }
+        }
+
+        const headers = raw[headerRowIdx].map(h => String(h ?? '').trim())
+        const rows = []
+        for (let i = headerRowIdx + 1; i < raw.length; i++) {
+          const row = raw[i]
+          if (row.every(v => v === '' || v == null)) continue
+          const obj = {}
+          headers.forEach((h, j) => { obj[h] = row[j] ?? '' })
+          rows.push(obj)
+        }
+        resolve(rows)
+      } catch (err) {
+        reject(err)
+      }
+    }
+    reader.onerror = reject
+    reader.readAsArrayBuffer(file)
+  })
+}
+
 export function parseCatalogoFile(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()

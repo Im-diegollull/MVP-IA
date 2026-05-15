@@ -15,11 +15,16 @@ const TABS = [
 export default function Dashboard({ m1, m2, m3, hasEstado, fileName, onReset }) {
   const [activeTab, setActiveTab] = useState('resumen')
   const [exporting, setExporting] = useState(false)
+  const [decisiones, setDecisiones] = useState({})
+
+  const handleDecision = (origIdx, decision) => {
+    setDecisiones(prev => ({ ...prev, [origIdx]: decision }))
+  }
 
   const handleExport = async () => {
     setExporting(true)
     try {
-      exportToExcel(m1, m2, m3, m1.kpi1, m2.kpi2, m3.kpi3)
+      exportToExcel(m1, m2, m3, m1.kpi1, m2.kpi2, m3.kpi3, decisiones, hasEstado)
     } finally {
       setExporting(false)
     }
@@ -104,7 +109,7 @@ export default function Dashboard({ m1, m2, m3, hasEstado, fileName, onReset }) 
       <main className="flex-1 px-6 py-6">
         <div className="max-w-7xl mx-auto">
           {activeTab === 'resumen' && <ResumenTab m1={m1} m2={m2} m3={m3} hasEstado={hasEstado} />}
-          {activeTab === 'modulo1' && <Modulo1Tab m1={m1} hasEstado={hasEstado} />}
+          {activeTab === 'modulo1' && <Modulo1Tab m1={m1} hasEstado={hasEstado} decisiones={decisiones} onDecision={handleDecision} />}
           {activeTab === 'modulo2' && <Modulo2Tab m2={m2} />}
           {activeTab === 'modulo3' && <Modulo3Tab m3={m3} />}
         </div>

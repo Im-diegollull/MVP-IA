@@ -15,6 +15,17 @@ function truncate(str, max = 30) {
   return str && str.length > max ? str.slice(0, max) + '…' : str
 }
 
+function tipoLabel(tipo, curso) {
+  if (!tipo || tipo === 'Clase') return curso
+  return `${tipo} de ${curso}`
+}
+
+function buildPairLabel(p) {
+  const a = tipoLabel(p.tipo1, p.cursoNrc1 || p.curso1 || `NRC ${p.nrc1}`)
+  const b = tipoLabel(p.tipo2, p.cursoNrc2 || p.curso2 || `NRC ${p.nrc2}`)
+  return `${a} vs ${b}`
+}
+
 export default function Modulo2Tab({ m2 }) {
   const [showAll, setShowAll] = useState(false)
   const [page, setPage] = useState(0)
@@ -134,8 +145,8 @@ export default function Modulo2Tab({ m2 }) {
             <tbody>
               {pageData.map((p, i) => (
                 <tr key={i} className={`border-b border-slate-700/40 ${p.numPeriodos >= 2 ? 'bg-violet-950/20' : ''}`}>
-                  <td className="py-1.5 pr-3 max-w-[220px]">
-                    <span className="text-slate-200 font-medium">{truncate(p.displayKey, 50)}</span>
+                  <td className="py-1.5 pr-3 max-w-[260px]">
+                    <span className="text-slate-200 font-medium">{truncate(buildPairLabel(p), 60)}</span>
                     {p.numPeriodos >= 2 && (
                       <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-violet-900/40 text-violet-300 border border-violet-700">
                         Recurrente

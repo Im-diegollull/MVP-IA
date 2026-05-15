@@ -15,7 +15,7 @@ function getField(row, ...keys) {
   return ''
 }
 
-export function runModulo2(rows, catalogoRows = []) {
+export function runModulo2(rows, catalogoRows = [], nrcInfoMap = new Map()) {
   // Build NRC → nombre lookup from ALL solicitudes rows (not just topes)
   const nrcToNombreSolicitudes = new Map()
   rows.forEach(r => {
@@ -69,11 +69,20 @@ export function runModulo2(rows, catalogoRows = []) {
       .join(' vs ')
 
     if (!pairMap.has(pairKey)) {
+      const [sortedNrc1, sortedNrc2] = pairKey.split('||')
+      const cursoNrc1 = sortedNrc1 === nrcSolicitado
+        ? (cursoPrincipal || `NRC ${nrcSolicitado}`)
+        : (cursoConflicto || `NRC ${nrcConflicto}`)
+      const cursoNrc2 = sortedNrc2 === nrcSolicitado
+        ? (cursoPrincipal || `NRC ${nrcSolicitado}`)
+        : (cursoConflicto || `NRC ${nrcConflicto}`)
       pairMap.set(pairKey, {
         pairKey,
         displayKey,
-        nrc1: pairKey.split('||')[0],
-        nrc2: pairKey.split('||')[1],
+        nrc1: sortedNrc1,
+        nrc2: sortedNrc2,
+        cursoNrc1,
+        cursoNrc2,
         curso1: cursoPrincipal || `NRC ${nrcSolicitado}`,
         curso2: cursoConflicto || `NRC ${nrcConflicto}`,
         solicitudes: 0,
@@ -94,6 +103,8 @@ export function runModulo2(rows, catalogoRows = []) {
     periodos: [...p.periodos].sort(),
     carreras: [...p.carreras],
     numPeriodos: p.periodos.size,
+    tipo1: nrcInfoMap.get(p.nrc1)?.tipo || null,
+    tipo2: nrcInfoMap.get(p.nrc2)?.tipo || null,
   }))
 
   const recurrentes = pares.filter(p => p.numPeriodos >= 2)

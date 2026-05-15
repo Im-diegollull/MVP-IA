@@ -38,13 +38,15 @@ export function runModulo3(rows) {
     if (!curso) return
 
     if (!courseByPeriod.has(curso)) {
-      courseByPeriod.set(curso, { curso, periodos: new Map(), carreras: new Set() })
+      courseByPeriod.set(curso, { curso, periodos: new Map(), carreras: new Set(), nrcs: new Set() })
     }
 
     const entry = courseByPeriod.get(curso)
     if (!entry.periodos.has(periodo)) entry.periodos.set(periodo, 0)
     entry.periodos.set(periodo, entry.periodos.get(periodo) + 1)
     if (carrera) entry.carreras.add(carrera)
+    const nrc = getField(row, 'NRC', 'nrc')
+    if (nrc) entry.nrcs.add(nrc)
   })
 
   // Get all periods sorted
@@ -67,6 +69,7 @@ export function runModulo3(rows) {
 
     return {
       curso: entry.curso,
+      nrcs: [...entry.nrcs].sort(),
       total,
       numPeriodos,
       mediaHist: +mediaHist.toFixed(1),
@@ -101,6 +104,6 @@ export function runModulo3(rows) {
     latestPeriod,
     numSugeridos: sugeridos.length,
     numConfirmados: confirmados.length,
-    kpi3: confirmados.length,
+    kpi3: sugeridos.length,
   }
 }

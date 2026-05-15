@@ -21,7 +21,7 @@ function Badge({ text }) {
   )
 }
 
-export default function Modulo1Tab({ m1, hasEstado }) {
+export default function Modulo1Tab({ m1, hasEstado, decisiones = {}, onDecision }) {
   const [filter, setFilter] = useState('Todos')
   const [page, setPage] = useState(0)
 
@@ -32,11 +32,13 @@ export default function Modulo1Tab({ m1, hasEstado }) {
 
   const handleFilter = (f) => { setFilter(f); setPage(0) }
 
-  // Category accuracy if Estado available
+  const aceptadas = Object.values(decisiones).filter(d => d === 'Aceptada').length
+  const rechazadas = Object.values(decisiones).filter(d => d === 'Rechazada').length
+  const pendientes = m1.clasificadas.length - aceptadas - rechazadas
+
   const catAccuracy = hasEstado ? Object.entries(
     m1.clasificadas.reduce((acc, r) => {
       const cat = r['Error Categoría'] || r['Error Categoria'] || 'Sin Categoría'
-      const clf = r._clasificacion
       const estado = String(r['Estado'] || '').trim()
       if (!acc[cat]) acc[cat] = { total: 0, rechazos: 0, aceptadas: 0 }
       acc[cat].total++
@@ -63,6 +65,19 @@ export default function Modulo1Tab({ m1, hasEstado }) {
           </div>
         ))}
       </div>
+
+      {/* Contador de decisiones (solo modo operativo) */}
+      {!hasEstado && (
+        <div className="bg-slate-800 rounded-xl p-4 flex items-center gap-6 flex-wrap">
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Decisiones coordinadora</p>
+          <div className="flex gap-4 text-sm">
+            <span className="text-emerald-400 font-bold">{aceptadas} <span className="font-normal text-slate-400">aceptadas</span></span>
+            <span className="text-red-400 font-bold">{rechazadas} <span className="font-normal text-slate-400">rechazadas</span></span>
+            <span className="text-slate-400 font-bold">{pendientes} <span className="font-normal">pendientes</span></span>
+          </div>
+          <p className="text-xs text-slate-600 ml-auto">Las decisiones se exportan en el Excel</p>
+        </div>
+      )}
 
       {/* KPI 1 detail if Estado */}
       {hasEstado && m1.kpi1 && (
@@ -130,26 +145,61 @@ export default function Modulo1Tab({ m1, hasEstado }) {
                 <th className="text-left py-2 pr-3">Curso</th>
                 <th className="text-left py-2 pr-3">Categoría</th>
                 <th className="text-left py-2 pr-3">Clasificación</th>
-                {hasEstado && <th className="text-left py-2">Estado Real</th>}
+                <th className="text-left py-2 pr-3">Detalle Tope</th>
+                {hasEstado
+                  ? <th className="text-left py-2">Estado Real</th>
+                  : <th className="text-left py-2">Decisión</th>
+                }
               </tr>
             </thead>
             <tbody>
-              {pageData.map((r, i) => (
-                <tr key={i} className="border-b border-slate-700/40 hover:bg-slate-750">
-                  <td className="py-1.5 pr-3">{r._id || '—'}</td>
-                  <td className="py-1.5 pr-3">{r['Carrera'] || '—'}</td>
-                  <td className="py-1.5 pr-3">{r['Catalogo'] || '—'}</td>
-                  <td className="py-1.5 pr-3">{r['NRC'] || '—'}</td>
-                  <td className="py-1.5 pr-3 max-w-[160px] truncate" title={r['Nombre del Curso']}>{r['Nombre del Curso'] || '—'}</td>
-                  <td className="py-1.5 pr-3">{r['Error Categoría'] || r['Error Categoria'] || '—'}</td>
-                  <td className="py-1.5 pr-3"><Badge text={r._clasificacion} /></td>
-                  {hasEstado && (
-                    <td className={`py-1.5 font-medium ${ESTADO_COLORS[r['Estado']] || 'text-slate-400'}`}>
-                      {r['Estado'] || '—'}
+              {pageData.map((r, i) => {
+                const decision = decisiones[r._origIdx]
+                return (
+                  <tr key={i} className="border-b border-slate-700/40 hover:bg-slate-750">
+                    <td className="py-1.5 pr-3">{r._id || '—'}</td>
+                    <td className="py-1.5 pr-3">{r['Carrera'] || '—'}</td>
+                    <td className="py-1.5 pr-3">{r['Catalogo'] || '—'}</td>
+                    <td className="py-1.5 pr-3">{r['NRC'] || '—'}</td>
+                    <td className="py-1.5 pr-3 max-w-[140px] truncate" title={r['Nombre del Curso']}>{r['Nombre del Curso'] || '—'}</td>
+                    <td className="py-1.5 pr-3">{r['Error Categoría'] || r['Error Categoria'] || '—'}</td>
+                    <td className="py-1.5 pr-3"><Badge text={r._clasificacion} /></td>
+                    <td className="py-1.5 pr-3 max-w-[200px] truncate text-slate-500" title={r._topeDetalle || ''}>
+                      {r._topeDetalle || '—'}
                     </td>
-                  )}
-                </tr>
-              ))}
+                    {hasEstado ? (
+                      <td className={`py-1.5 font-medium ${ESTADO_COLORS[r['Estado']] || 'text-slate-400'}`}>
+                        {r['Estado'] || '—'}
+                      </td>
+                    ) : (
+                      <td className="py-1.5">
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => onDecision(r._origIdx, decision === 'Aceptada' ? null : 'Aceptada')}
+                            className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${
+                              decision === 'Aceptada'
+                                ? 'bg-emerald-700 text-white'
+                                : 'bg-slate-700 text-slate-400 hover:bg-emerald-900 hover:text-emerald-300'
+                            }`}
+                          >
+                            Aceptar
+                          </button>
+                          <button
+                            onClick={() => onDecision(r._origIdx, decision === 'Rechazada' ? null : 'Rechazada')}
+                            className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${
+                              decision === 'Rechazada'
+                                ? 'bg-red-700 text-white'
+                                : 'bg-slate-700 text-slate-400 hover:bg-red-900 hover:text-red-300'
+                            }`}
+                          >
+                            Rechazar
+                          </button>
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
