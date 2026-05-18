@@ -1,4 +1,4 @@
-// Module 3: Overcapacity projection (basic AI - statistical)
+// Module 3: Overcapacity projection — linear regression forecast
 
 function getField(row, ...keys) {
   for (const k of keys) {
@@ -18,6 +18,25 @@ function stddev(arr) {
   const m = mean(arr)
   return Math.sqrt(arr.reduce((acc, v) => acc + (v - m) ** 2, 0) / arr.length)
 }
+
+// Ordinary least squares linear regression
+function linearRegression(xArr, yArr) {
+  const n = xArr.length
+  if (n < 2) return { slope: 0, intercept: yArr[0] || 0 }
+  const sumX = xArr.reduce((a, b) => a + b, 0)
+  const sumY = yArr.reduce((a, b) => a + b, 0)
+  const sumXY = xArr.reduce((acc, x, i) => acc + x * yArr[i], 0)
+  const sumX2 = xArr.reduce((acc, x) => acc + x * x, 0)
+  const denom = n * sumX2 - sumX * sumX
+  if (denom === 0) return { slope: 0, intercept: sumY / n }
+  const slope = (n * sumXY - sumX * sumY) / denom
+  const intercept = (sumY - slope * sumX) / n
+  return { slope, intercept }
+}
+
+const UMBRAL_PROYECCION = 3   // solicitudes mínimas proyectadas para recomendar sobrecupo
+const MIN_TOTAL = 3           // mínimo histórico para ser candidato
+const MIN_PERIODOS = 2        // mínimos períodos con datos
 
 export function runModulo3(rows) {
   // Filter sección cerrada
@@ -49,23 +68,39 @@ export function runModulo3(rows) {
     if (nrc) entry.nrcs.add(nrc)
   })
 
-  // Get all periods sorted
+  // All periods sorted chronologically
   const allPeriods = [...new Set(secCerrada.map(r =>
     getField(r, 'Catalogo', 'catalogo', 'Período', 'periodo')
   ).filter(Boolean))].sort()
 
   const latestPeriod = allPeriods[allPeriods.length - 1]
 
-  // Build statistics per course
+  // Build statistics + regression per course
   const cursoStats = Array.from(courseByPeriod.values()).map(entry => {
-    const counts = [...entry.periodos.values()]
+    // Counts in chronological order (sorted by period label)
+    const sortedPeriods = [...entry.periodos.keys()].sort()
+    const counts = sortedPeriods.map(p => entry.periodos.get(p))
+
     const total = counts.reduce((a, b) => a + b, 0)
     const numPeriodos = entry.periodos.size
     const mediaHist = mean(counts)
     const deHist = stddev(counts)
-    const umbral = mediaHist + deHist
+
+    // Linear regression: x = period index (0,1,2,...), y = demand count
+    const xArr = counts.map((_, i) => i)
+    const { slope, intercept } = linearRegression(xArr, counts)
+
+    // Proyección para el próximo semestre (índice = numPeriodos)
+    const proyeccionRaw = slope * numPeriodos + intercept
+    const proyeccionProxPeriodo = Math.max(0, Math.round(proyeccionRaw))
+
+    // Clasificación de tendencia
+    const tendencia = slope > 0.3 ? 'creciente' : slope < -0.3 ? 'decreciente' : 'estable'
+
+    // ¿Se recomienda sobrecupo? Basado en proyección, no en último período
+    const recomendaSobrecupo = proyeccionProxPeriodo >= UMBRAL_PROYECCION
+
     const ultimaDemanda = entry.periodos.get(latestPeriod) || 0
-    const tieneAltaDemanda = ultimaDemanda >= umbral && umbral > 0
 
     return {
       curso: entry.curso,
@@ -74,24 +109,29 @@ export function runModulo3(rows) {
       numPeriodos,
       mediaHist: +mediaHist.toFixed(1),
       deHist: +deHist.toFixed(1),
-      umbral: +umbral.toFixed(1),
+      slope: +slope.toFixed(2),
+      intercept: +intercept.toFixed(2),
+      proyeccionProxPeriodo,
+      tendencia,
+      recomendaSobrecupo,
       ultimaDemanda,
       latestPeriod,
-      tieneAltaDemanda,
+      // kept for backward compat
+      tieneAltaDemanda: recomendaSobrecupo,
+      umbral: +(mediaHist + deHist).toFixed(1),
       periodos: Object.fromEntries(entry.periodos),
       carreras: [...entry.carreras],
     }
   })
 
-  // Suggestion criteria: >=5 total solicitudes AND >=2 periods
+  // Candidates: enough historical data to make a reliable projection
   const sugeridos = cursoStats
-    .filter(c => c.total >= 5 && c.numPeriodos >= 2)
-    .sort((a, b) => b.total - a.total)
+    .filter(c => c.total >= MIN_TOTAL && c.numPeriodos >= MIN_PERIODOS)
+    .sort((a, b) => b.proyeccionProxPeriodo - a.proyeccionProxPeriodo || b.total - a.total)
 
-  // KPI 3: how many suggested courses confirmed high demand in latest period
-  const confirmados = sugeridos.filter(c => c.tieneAltaDemanda)
+  // KPI 3: courses the model predicts will need sobrecupo next semester
+  const confirmados = sugeridos.filter(c => c.recomendaSobrecupo)
 
-  // Top 10 for chart
   const top10 = sugeridos.slice(0, 10)
 
   return {
@@ -104,6 +144,6 @@ export function runModulo3(rows) {
     latestPeriod,
     numSugeridos: sugeridos.length,
     numConfirmados: confirmados.length,
-    kpi3: sugeridos.length,
+    kpi3: confirmados.length,
   }
 }

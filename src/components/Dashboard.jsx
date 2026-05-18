@@ -16,9 +16,19 @@ export default function Dashboard({ m1, m2, m3, hasEstado, fileName, onReset }) 
   const [activeTab, setActiveTab] = useState('resumen')
   const [exporting, setExporting] = useState(false)
   const [decisiones, setDecisiones] = useState({})
+  const [m3Decisiones, setM3Decisiones] = useState({})
 
   const handleDecision = (origIdx, decision) => {
     setDecisiones(prev => ({ ...prev, [origIdx]: decision }))
+  }
+
+  const handleM3Decision = (curso, decision) => {
+    setM3Decisiones(prev => {
+      const next = { ...prev }
+      if (decision === null) delete next[curso]
+      else next[curso] = decision
+      return next
+    })
   }
 
   const handleExport = async () => {
@@ -111,7 +121,7 @@ export default function Dashboard({ m1, m2, m3, hasEstado, fileName, onReset }) 
           {activeTab === 'resumen' && <ResumenTab m1={m1} m2={m2} m3={m3} hasEstado={hasEstado} />}
           {activeTab === 'modulo1' && <Modulo1Tab m1={m1} hasEstado={hasEstado} decisiones={decisiones} onDecision={handleDecision} />}
           {activeTab === 'modulo2' && <Modulo2Tab m2={m2} />}
-          {activeTab === 'modulo3' && <Modulo3Tab m3={m3} />}
+          {activeTab === 'modulo3' && <Modulo3Tab m3={m3} m3Decisiones={m3Decisiones} onM3Decision={handleM3Decision} />}
         </div>
       </main>
 
