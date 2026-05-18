@@ -32,6 +32,10 @@ export default function Modulo1Tab({ m1, hasEstado, decisiones = {}, onDecision 
 
   const handleFilter = (f) => { setFilter(f); setPage(0) }
 
+  // Filas con Estado real vs filas interactivas (Estado vacío)
+  const anyEstadoReal = m1.clasificadas.some(r => String(r['Estado'] || '').trim())
+  const modoInteractivo = !anyEstadoReal
+
   const aceptadas = Object.values(decisiones).filter(d => d === 'Aceptada').length
   const rechazadas = Object.values(decisiones).filter(d => d === 'Rechazada').length
   const pendientes = m1.clasificadas.length - aceptadas - rechazadas
@@ -66,8 +70,8 @@ export default function Modulo1Tab({ m1, hasEstado, decisiones = {}, onDecision 
         ))}
       </div>
 
-      {/* Contador de decisiones (solo modo operativo) */}
-      {!hasEstado && (
+      {/* Contador de decisiones */}
+      {modoInteractivo && (
         <div className="bg-slate-800 rounded-xl p-4 flex items-center gap-6 flex-wrap">
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Decisiones coordinadora</p>
           <div className="flex gap-4 text-sm">
@@ -146,10 +150,7 @@ export default function Modulo1Tab({ m1, hasEstado, decisiones = {}, onDecision 
                 <th className="text-left py-2 pr-3">Categoría</th>
                 <th className="text-left py-2 pr-3">Clasificación</th>
                 <th className="text-left py-2 pr-3">Detalle Tope</th>
-                {hasEstado
-                  ? <th className="text-left py-2">Estado Real</th>
-                  : <th className="text-left py-2">Decisión</th>
-                }
+                <th className="text-left py-2">{modoInteractivo ? 'Decisión' : 'Estado Real'}</th>
               </tr>
             </thead>
             <tbody>
@@ -167,11 +168,7 @@ export default function Modulo1Tab({ m1, hasEstado, decisiones = {}, onDecision 
                     <td className="py-1.5 pr-3 max-w-[200px] truncate text-slate-500" title={r._topeDetalle || ''}>
                       {r._topeDetalle || '—'}
                     </td>
-                    {hasEstado ? (
-                      <td className={`py-1.5 font-medium ${ESTADO_COLORS[r['Estado']] || 'text-slate-400'}`}>
-                        {r['Estado'] || '—'}
-                      </td>
-                    ) : (
+                    {modoInteractivo ? (
                       <td className="py-1.5">
                         <div className="flex gap-1">
                           <button
@@ -195,6 +192,10 @@ export default function Modulo1Tab({ m1, hasEstado, decisiones = {}, onDecision 
                             Rechazar
                           </button>
                         </div>
+                      </td>
+                    ) : (
+                      <td className={`py-1.5 font-medium ${ESTADO_COLORS[r['Estado']] || 'text-slate-400'}`}>
+                        {r['Estado'] || '—'}
                       </td>
                     )}
                   </tr>

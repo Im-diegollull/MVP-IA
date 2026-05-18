@@ -1,22 +1,39 @@
 import * as XLSX from 'xlsx'
 
+function setColWidths(ws, widths) {
+  ws['!cols'] = widths.map(w => ({ wch: w }))
+}
+
+function freezeHeader(ws) {
+  ws['!freeze'] = { xSplit: 0, ySplit: 1, topLeftCell: 'A2', activePane: 'bottomLeft' }
+}
+
 export function exportToExcel(modulo1Result, modulo2Result, modulo3Result, kpi1, kpi2, kpi3, decisiones = {}, hasEstado = false) {
   const wb = XLSX.utils.book_new()
 
   // Sheet 1: Solicitudes Clasificadas
-  const sheet1Data = modulo1Result.clasificadas.map(r => ({
-    'ID Anónimo': r._id || '',
-    'Carrera': r['Carrera'] || '',
-    'Catalogo': r['Catalogo'] || '',
-    'NRC': r['NRC'] || '',
-    'Nombre del Curso': r['Nombre del Curso'] || '',
-    'Error Categoría': r['Error Categoría'] || r['Error Categoria'] || '',
-    'Clasificación Sistema': r._clasificacion || '',
-    'Detalle Tope': r._topeDetalle || '',
-    'Estado Real': r['Estado'] || '',
-    'Decisión Coordinadora': hasEstado ? (r['Estado'] || '') : (decisiones[r._origIdx] || 'Pendiente'),
-  }))
+  const sheet1Data = modulo1Result.clasificadas.map(r => {
+    const estadoReal = String(r['Estado'] || '').trim()
+    // Use decision buttons when no real Estado value exists for this row
+    const decisionCoord = estadoReal
+      ? estadoReal
+      : (decisiones[r._origIdx] != null ? decisiones[r._origIdx] : 'Pendiente')
+
+    return {
+      'ID Anónimo': r._id || '',
+      'Carrera': r['Carrera'] || '',
+      'Período': r['Catalogo'] || '',
+      'NRC': r['NRC'] || '',
+      'Nombre del Curso': r['Nombre del Curso'] || '',
+      'Error Categoría': r['Error Categoría'] || r['Error Categoria'] || '',
+      'Clasificación Sistema': r._clasificacion || '',
+      'Detalle Tope': r._topeDetalle || '',
+      'Decisión Coordinadora': decisionCoord,
+    }
+  })
   const ws1 = XLSX.utils.json_to_sheet(sheet1Data)
+  setColWidths(ws1, [10, 12, 10, 8, 30, 20, 18, 55, 20])
+  freezeHeader(ws1)
   XLSX.utils.book_append_sheet(wb, ws1, 'Solicitudes Clasificadas')
 
   // Sheet 2: Pares Recurrentes
@@ -30,6 +47,8 @@ export function exportToExcel(modulo1Result, modulo2Result, modulo3Result, kpi1,
     'Carreras': p.carreras.join(', '),
   }))
   const ws2 = XLSX.utils.json_to_sheet(sheet2Data)
+  setColWidths(ws2, [60, 10, 10, 16, 12, 30, 30])
+  freezeHeader(ws2)
   XLSX.utils.book_append_sheet(wb, ws2, 'Pares Recurrentes')
 
   // Sheet 3: Sugerencias Sobrecupo
@@ -40,6 +59,8 @@ export function exportToExcel(modulo1Result, modulo2Result, modulo3Result, kpi1,
     '¿Sobrecupo?': 'Sí',
   }))
   const ws3 = XLSX.utils.json_to_sheet(sheet3Data)
+  setColWidths(ws3, [35, 20, 12, 12])
+  freezeHeader(ws3)
   XLSX.utils.book_append_sheet(wb, ws3, 'Sugerencias Sobrecupo')
 
   // Sheet 4: Resumen KPIs
@@ -59,7 +80,7 @@ export function exportToExcel(modulo1Result, modulo2Result, modulo3Result, kpi1,
       'Cumple': kpi2 >= 15 ? 'Sí' : 'No',
     },
     {
-      'KPI': 'KPI 3 - Ramos con Sobrecupo Anticipado Correctamente',
+      'KPI': 'KPI 3 - Ramos Sugeridos para Sobrecupo',
       'Responsable': 'Diego Llull',
       'Valor': kpi3,
       'Objetivo': '≥ 6 ramos',
@@ -67,8 +88,8 @@ export function exportToExcel(modulo1Result, modulo2Result, modulo3Result, kpi1,
     },
   ]
   const ws4 = XLSX.utils.json_to_sheet(sheet4Data)
+  setColWidths(ws4, [45, 20, 22, 12, 8])
   XLSX.utils.book_append_sheet(wb, ws4, 'Resumen KPIs')
 
-  // Download
   XLSX.writeFile(wb, 'Resultados_Sistema_Solicitudes.xlsx')
 }
