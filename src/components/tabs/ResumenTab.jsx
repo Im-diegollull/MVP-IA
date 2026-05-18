@@ -33,10 +33,24 @@ export default function ResumenTab({ m1, m2, m3, hasEstado }) {
       'Revisión Manual': vals.revision,
     }))
 
+  const CARRERA_NAMES = {
+    'INGI': 'Ing. Industrial',
+    'INGE': 'Ing. Eléctrica',
+    'INGC': 'Ing. Computación',
+    'INGO': 'Obras Civiles',
+    'INGQ': 'Ing. Química',
+    'INGA': 'Ing. Ambiental',
+    'ING':  'Ing. Civil',
+  }
+
   // Carrera bar chart
   const carreraData = Object.entries(m1.byCarrera)
     .sort(([, a], [, b]) => b - a)
-    .map(([carrera, total]) => ({ carrera, total }))
+    .map(([carrera, total]) => ({
+      carrera,
+      nombre: CARRERA_NAMES[carrera] || carrera,
+      total,
+    }))
 
   return (
     <div className="space-y-6">
@@ -70,32 +84,72 @@ export default function ResumenTab({ m1, m2, m3, hasEstado }) {
 
       {/* Charts row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Pie: distribution by category */}
+        {/* Pie: distribution by category — donut style */}
         <div className="bg-slate-800 rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-slate-300 mb-4">Distribución por Categoría de Error</h3>
-          <ResponsiveContainer width="100%" height={240}>
+          <h3 className="text-sm font-semibold text-slate-300 mb-3">Distribución por Categoría de Error</h3>
+          <ResponsiveContainer width="100%" height={180}>
             <PieChart>
-              <Pie data={catData} dataKey="value" nameKey="name" cx="50%" cy="50%"
-                outerRadius={90} label={({ name, percent }) => `${name.split(' ')[0]} ${(percent * 100).toFixed(0)}%`}
-                labelLine={false}>
+              <Pie
+                data={catData}
+                dataKey="value"
+                nameKey="name"
+                cx="50%" cy="50%"
+                innerRadius={52}
+                outerRadius={82}
+                paddingAngle={3}
+                strokeWidth={0}
+              >
                 {catData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
               </Pie>
-              <Tooltip {...TOOLTIP_STYLE} />
-              <Legend wrapperStyle={{ fontSize: 11, color: '#94a3b8' }} />
+              <Tooltip {...TOOLTIP_STYLE} formatter={(v) => [v, 'Solicitudes']} />
             </PieChart>
           </ResponsiveContainer>
+          {/* Custom legend */}
+          <div className="mt-3 space-y-1.5">
+            {catData
+              .sort((a, b) => b.value - a.value)
+              .map((entry, i) => {
+                const idx = catData.indexOf(entry)
+                const pct = ((entry.value / m1.total) * 100).toFixed(1)
+                return (
+                  <div key={i} className="flex items-center gap-2 text-xs">
+                    <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />
+                    <span className="text-slate-300 truncate flex-1">{entry.name}</span>
+                    <span className="text-slate-400 shrink-0 tabular-nums">{entry.value}</span>
+                    <span className="text-slate-600 shrink-0 w-10 text-right tabular-nums">{pct}%</span>
+                  </div>
+                )
+              })}
+          </div>
         </div>
 
-        {/* Bar: by carrera */}
+        {/* Bar: by carrera — horizontal for readability */}
         <div className="bg-slate-800 rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-slate-300 mb-4">Solicitudes por Carrera</h3>
+          <h3 className="text-sm font-semibold text-slate-300 mb-1">Solicitudes por Carrera</h3>
+          <p className="text-xs text-slate-500 mb-3">Hover sobre cada barra para ver el código completo</p>
           <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={carreraData} margin={{ top: 0, right: 10, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-              <XAxis dataKey="carrera" tick={{ fill: '#94a3b8', fontSize: 11 }} />
-              <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} />
-              <Tooltip {...TOOLTIP_STYLE} />
-              <Bar dataKey="total" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+            <BarChart
+              data={carreraData}
+              layout="vertical"
+              margin={{ top: 0, right: 40, left: 10, bottom: 0 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#334155" horizontal={false} />
+              <XAxis type="number" tick={{ fill: '#94a3b8', fontSize: 10 }} />
+              <YAxis
+                type="category"
+                dataKey="nombre"
+                tick={{ fill: '#cbd5e1', fontSize: 11, fontWeight: 500 }}
+                width={110}
+              />
+              <Tooltip
+                {...TOOLTIP_STYLE}
+                formatter={(value, name, props) => [value, props.payload.nombre]}
+              />
+              <Bar dataKey="total" radius={[0, 4, 4, 0]} label={{ position: 'right', fill: '#94a3b8', fontSize: 10 }}>
+                {carreraData.map((_, i) => (
+                  <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
