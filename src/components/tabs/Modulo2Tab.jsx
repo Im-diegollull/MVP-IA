@@ -145,10 +145,10 @@ export default function Modulo2Tab({ m2 }) {
             <tbody>
               {pageData.map((p, i) => (
                 <tr key={i} className={`border-b border-slate-700/40 ${p.numPeriodos >= 2 ? 'bg-violet-950/20' : ''}`}>
-                  <td className="py-1.5 pr-3 max-w-[260px]">
-                    <span className="text-slate-200 font-medium">{truncate(buildPairLabel(p), 60)}</span>
+                  <td className="py-2 pr-3 w-[45%]">
+                    <div className="text-slate-200 font-medium leading-snug">{buildPairLabel(p)}</div>
                     {p.numPeriodos >= 2 && (
-                      <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-violet-900/40 text-violet-300 border border-violet-700">
+                      <span className="mt-1 inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-violet-900/40 text-violet-300 border border-violet-700">
                         Recurrente
                       </span>
                     )}
