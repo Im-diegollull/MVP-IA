@@ -34,11 +34,9 @@ export default function Modulo3Tab({ m3, m3Decisiones = {}, onM3Decision }) {
     Histórico: c.ultimaDemanda,
   }))
 
-  // Effective decision for each course: model recommendation or manual override
-  function getDecision(curso, recomendaSobrecupo) {
-    const manual = m3Decisiones[curso]
-    if (manual !== undefined) return manual
-    return recomendaSobrecupo ? 'confirmar' : null
+  // Effective decision for each course: only the coordinator's manual click counts
+  function getDecision(curso) {
+    return m3Decisiones[curso] ?? null
   }
 
   return (
@@ -118,7 +116,7 @@ export default function Modulo3Tab({ m3, m3Decisiones = {}, onM3Decision }) {
             </thead>
             <tbody>
               {pageData.map((c, i) => {
-                const decision = getDecision(c.curso, c.recomendaSobrecupo)
+                const decision = getDecision(c.curso)
                 const isConfirmado = decision === 'confirmar'
                 const isDescartado = decision === 'descartar'
                 const tConfig = TENDENCIA_CONFIG[c.tendencia] || TENDENCIA_CONFIG.estable
