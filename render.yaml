@@ -1,4 +1,4 @@
-services:
+pservices:
   - type: web
     name: ia-mvp
     runtime: static

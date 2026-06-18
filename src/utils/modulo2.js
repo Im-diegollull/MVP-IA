@@ -144,6 +144,59 @@ export function runModulo2(rows, catalogoRows = [], nrcInfoMap = new Map()) {
     })
     .sort((a, b) => b.support - a.support)
 
+  // Sección Cerrada analysis — courses with high demand (recurring full capacity)
+  const seccionesCerradas = rows.filter(r => {
+    const cat = getField(r, 'Error Categoría', 'Error Categoria', 'Error categoria')
+    return cat === 'Sección Cerrada'
+  })
+
+  const nrcCerradaMap = new Map()
+  seccionesCerradas.forEach(row => {
+    const nrc = getField(row, 'NRC', 'nrc')
+    const curso = getField(row, 'Nombre del Curso', 'Nombre del curso', 'nombre del curso')
+    const periodo = getField(row, 'Catalogo', 'catalogo', 'Período', 'periodo')
+    const carrera = getField(row, 'Carrera', 'carrera')
+    if (!nrc) return
+    if (!nrcCerradaMap.has(nrc)) {
+      nrcCerradaMap.set(nrc, { nrc, curso, solicitudes: 0, periodos: new Set(), carreras: new Set() })
+    }
+    const entry = nrcCerradaMap.get(nrc)
+    entry.solicitudes++
+    if (periodo) entry.periodos.add(periodo)
+    if (carrera) entry.carreras.add(carrera)
+  })
+
+  const nrcsCerrados = Array.from(nrcCerradaMap.values())
+    .map(e => ({ ...e, periodos: [...e.periodos].sort(), carreras: [...e.carreras], numPeriodos: e.periodos.size }))
+    .sort((a, b) => b.solicitudes - a.solicitudes || b.numPeriodos - a.numPeriodos)
+
+  // Restricción Carrera analysis — which courses/careers repeatedly restrict
+  const restriccionCarrera = rows.filter(r => {
+    const cat = getField(r, 'Error Categoría', 'Error Categoria', 'Error categoria')
+    return cat === 'Restricción Carrera' || cat === 'Restriccion Carrera'
+  })
+
+  const restriccionMap = new Map()
+  restriccionCarrera.forEach(row => {
+    const nrc = getField(row, 'NRC', 'nrc')
+    const curso = getField(row, 'Nombre del Curso', 'Nombre del curso', 'nombre del curso')
+    const periodo = getField(row, 'Catalogo', 'catalogo', 'Período', 'periodo')
+    const carrera = getField(row, 'Carrera', 'carrera')
+    if (!nrc) return
+    if (!restriccionMap.has(nrc)) {
+      restriccionMap.set(nrc, { nrc, curso, solicitudes: 0, periodos: new Set(), carreras: new Set() })
+    }
+    const entry = restriccionMap.get(nrc)
+    entry.solicitudes++
+    if (periodo) entry.periodos.add(periodo)
+    if (carrera) entry.carreras.add(carrera)
+  })
+
+  const restriccionesRecurrentes = Array.from(restriccionMap.values())
+    .map(e => ({ ...e, periodos: [...e.periodos].sort(), carreras: [...e.carreras], numPeriodos: e.periodos.size }))
+    .filter(e => e.numPeriodos >= 2)
+    .sort((a, b) => b.solicitudes - a.solicitudes)
+
   return {
     topes,
     pares,
@@ -153,5 +206,9 @@ export function runModulo2(rows, catalogoRows = [], nrcInfoMap = new Map()) {
     numRecurrentes: recurrentes.length,
     numTopes: topes.length,
     kpi2: recurrentes.length,
+    nrcsCerrados,
+    numSeccionesCerradas: seccionesCerradas.length,
+    restriccionesRecurrentes,
+    numRestriccionCarrera: restriccionCarrera.length,
   }
 }

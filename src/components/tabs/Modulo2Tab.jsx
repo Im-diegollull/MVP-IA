@@ -16,14 +16,14 @@ function truncate(str, max = 30) {
 }
 
 function tipoLabel(tipo, curso) {
-  if (!tipo || tipo === 'Clase') return curso
-  return `${tipo} de ${curso}`
+  if (!tipo) return curso
+  return `${tipo}: ${curso}`
 }
 
 function buildPairLabel(p) {
   const a = tipoLabel(p.tipo1, p.cursoNrc1 || p.curso1 || `NRC ${p.nrc1}`)
   const b = tipoLabel(p.tipo2, p.cursoNrc2 || p.curso2 || `NRC ${p.nrc2}`)
-  return `${a} vs ${b}`
+  return `${a} topa con ${b}`
 }
 
 export default function Modulo2Tab({ m2 }) {
@@ -36,7 +36,7 @@ export default function Modulo2Tab({ m2 }) {
 
   // Top 10 recurrentes for bar chart
   const chartData = m2.recurrentes.slice(0, 10).map(p => ({
-    name: truncate(p.displayKey, 35),
+    name: truncate(buildPairLabel(p), 45),
     Solicitudes: p.solicitudes,
     Períodos: p.numPeriodos,
   }))
@@ -90,33 +90,6 @@ export default function Modulo2Tab({ m2 }) {
         </div>
       )}
 
-      {/* Frequent itemsets from Apriori */}
-      {m2.frecuentItemsets.length > 0 && (
-        <div className="bg-slate-800 rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-slate-300 mb-3">Itemsets Frecuentes — Análisis Apriori</h3>
-          <p className="text-xs text-slate-500 mb-3">Pares de cursos que co-ocurren en solicitudes del mismo estudiante y período (soporte ≥ 2)</p>
-          <div className="overflow-x-auto max-h-48">
-            <table className="w-full text-xs text-slate-400">
-              <thead className="sticky top-0 bg-slate-800">
-                <tr className="border-b border-slate-700">
-                  <th className="text-left py-2 pr-4">Curso A</th>
-                  <th className="text-left py-2 pr-4">Curso B</th>
-                  <th className="text-right py-2">Soporte</th>
-                </tr>
-              </thead>
-              <tbody>
-                {m2.frecuentItemsets.slice(0, 20).map((item, i) => (
-                  <tr key={i} className="border-b border-slate-700/40">
-                    <td className="py-1.5 pr-4 text-slate-300">{item.items[0]}</td>
-                    <td className="py-1.5 pr-4 text-slate-300">{item.items[1]}</td>
-                    <td className="text-right py-1.5 text-violet-400 font-medium">{item.support}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
 
       {/* Table */}
       <div className="bg-slate-800 rounded-xl p-5">

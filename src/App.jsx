@@ -9,6 +9,7 @@ const TIPO_MAP = {
   'CLAS': 'Clase', 'OLIN': 'Clase Online',
   'AYUD': 'Ayudantía', 'AYON': 'Ayudantía Online',
   'LABT': 'Laboratorio',
+  'EXAM': 'Examen', 'CTRL': 'Control', 'PRUE': 'Prueba', 'TEST': 'Prueba',
 }
 
 function buildNrcInfoMap(horarioRows) {

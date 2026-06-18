@@ -13,12 +13,37 @@ const ESTADO_COLORS = {
   'Aceptada': 'text-emerald-400',
 }
 
+const TIPO_COLORS = {
+  'Clase': 'bg-blue-900/40 text-blue-300 border border-blue-700',
+  'Clase Online': 'bg-blue-900/40 text-blue-300 border border-blue-700',
+  'Ayudantía': 'bg-teal-900/40 text-teal-300 border border-teal-700',
+  'Ayudantía Online': 'bg-teal-900/40 text-teal-300 border border-teal-700',
+  'Laboratorio': 'bg-purple-900/40 text-purple-300 border border-purple-700',
+  'Examen': 'bg-orange-900/40 text-orange-300 border border-orange-700',
+  'Control': 'bg-orange-900/40 text-orange-300 border border-orange-700',
+  'Prueba': 'bg-orange-900/40 text-orange-300 border border-orange-700',
+}
+
 function Badge({ text }) {
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${CLF_COLORS[text] || 'bg-slate-700 text-slate-300'}`}>
       {text}
     </span>
   )
+}
+
+function TipoBadge({ tipo }) {
+  if (!tipo) return <span className="text-slate-600">—</span>
+  return (
+    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${TIPO_COLORS[tipo] || 'bg-slate-700 text-slate-300'}`}>
+      {tipo}
+    </span>
+  )
+}
+
+function getPrioridad(row) {
+  return row['PA'] || row['Prioridad'] || row['prioridad'] || row['PRIORIDAD'] ||
+    row['Prioridad Academica'] || row['Prioridad Académica'] || null
 }
 
 export default function Modulo1Tab({ m1, hasEstado, decisiones = {}, onDecision }) {
@@ -86,7 +111,11 @@ export default function Modulo1Tab({ m1, hasEstado, decisiones = {}, onDecision 
       {/* KPI 1 detail if Estado */}
       {hasEstado && m1.kpi1 && (
         <div className="bg-slate-800 rounded-xl p-5 border border-slate-700">
-          <h3 className="text-sm font-semibold text-slate-300 mb-3">KPI 1 — Comparación Sistema vs. Coordinadora</h3>
+          <h3 className="text-sm font-semibold text-slate-300 mb-1">KPI 1 — Comparación Sistema vs. Coordinadora</h3>
+          <p className="text-xs text-slate-500 mb-3">
+            Mide qué porcentaje de las solicitudes marcadas como <strong className="text-slate-400">Tope de Horario</strong> o <strong className="text-slate-400">Curso Ligado</strong> por el sistema coinciden con la decisión real de la coordinadora (estado = Rechazada).
+            Un valor ≥ 90% indica alta alineación entre la clasificación automática y el criterio de la coordinadora.
+          </p>
           <div className="flex items-center gap-6 mb-4">
             <div>
               <span className="text-3xl font-bold text-blue-400">{m1.kpi1}%</span>
@@ -143,9 +172,11 @@ export default function Modulo1Tab({ m1, hasEstado, decisiones = {}, onDecision 
             <thead>
               <tr className="border-b border-slate-700">
                 <th className="text-left py-2 pr-3">ID</th>
+                <th className="text-left py-2 pr-3">Prioridad</th>
                 <th className="text-left py-2 pr-3">Carrera</th>
                 <th className="text-left py-2 pr-3">Período</th>
                 <th className="text-left py-2 pr-3">NRC</th>
+                <th className="text-left py-2 pr-3">Tipo</th>
                 <th className="text-left py-2 pr-3">Curso</th>
                 <th className="text-left py-2 pr-3">Categoría</th>
                 <th className="text-left py-2 pr-3">Clasificación</th>
@@ -156,17 +187,26 @@ export default function Modulo1Tab({ m1, hasEstado, decisiones = {}, onDecision 
             <tbody>
               {pageData.map((r, i) => {
                 const decision = decisiones[r._origIdx]
+                const prioridad = getPrioridad(r)
                 return (
                   <tr key={i} className="border-b border-slate-700/40 hover:bg-slate-750">
                     <td className="py-1.5 pr-3">{r._id || '—'}</td>
+                    <td className="py-1.5 pr-3">
+                      {prioridad !== null
+                        ? <span className="font-bold text-white">{prioridad}</span>
+                        : <span className="text-slate-600">—</span>}
+                    </td>
                     <td className="py-1.5 pr-3">{r['Carrera'] || '—'}</td>
                     <td className="py-1.5 pr-3">{r['Catalogo'] || '—'}</td>
                     <td className="py-1.5 pr-3">{r['NRC'] || '—'}</td>
+                    <td className="py-1.5 pr-3"><TipoBadge tipo={r._tipoNrc} /></td>
                     <td className="py-1.5 pr-3 max-w-[140px] truncate" title={r['Nombre del Curso']}>{r['Nombre del Curso'] || '—'}</td>
                     <td className="py-1.5 pr-3">{r['Error Categoría'] || r['Error Categoria'] || '—'}</td>
                     <td className="py-1.5 pr-3"><Badge text={r._clasificacion} /></td>
-                    <td className="py-1.5 pr-3 max-w-[200px] truncate text-slate-500" title={r._topeDetalle || ''}>
-                      {r._topeDetalle || '—'}
+                    <td className="py-1.5 pr-3 min-w-[220px] text-slate-400 whitespace-normal leading-snug">
+                      {r._topeDetalle
+                        ? <span>{r._topeDetalle}</span>
+                        : <span className="text-slate-600">—</span>}
                     </td>
                     {modoInteractivo ? (
                       <td className="py-1.5">

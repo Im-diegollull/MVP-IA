@@ -25,17 +25,23 @@ export function runModulo1(rows, hasEstado, nrcInfoMap = new Map()) {
     const errorStr = String(row['Error'] ?? row['error'] ?? '').trim()
     const nrcConflicto = errorStr.match(/NRC\s+(\d+)/i)?.[1] ?? null
 
+    const nrcSolicitado = String(row['NRC'] ?? '').trim()
+    const _tipoNrc = nrcInfoMap.get(nrcSolicitado)?.tipo || null
+
     let _topeDetalle = null
     if (cat === 'Tope de Horario' && nrcConflicto) {
       const info = nrcInfoMap.get(nrcConflicto)
+      const nombreSolicitud = String(row['Nombre del Curso'] ?? row['Nombre Curso'] ?? '').trim()
+      const tipoSolicitado = _tipoNrc
+      const cursoLabel = [tipoSolicitado, nombreSolicitud].filter(Boolean).join(' ')
       if (info) {
-        _topeDetalle = `Tope con ${info.tipo} de ${info.titulo} (NRC ${nrcConflicto})${info.horario ? ' — ' + info.horario : ''}`
+        _topeDetalle = `${cursoLabel ? cursoLabel + ' — tope con ' : 'Tope con '}${info.tipo} de ${info.titulo} (NRC ${nrcConflicto})${info.horario ? ' — ' + info.horario : ''}`
       } else {
-        _topeDetalle = `NRC ${nrcConflicto} (sin detalle)`
+        _topeDetalle = `${cursoLabel ? cursoLabel + ' — tope con ' : 'Tope con '}NRC ${nrcConflicto} (sin detalle)`
       }
     }
 
-    return { ...row, _clasificacion: clasificacion, _origIdx: idx, _topeDetalle }
+    return { ...row, _clasificacion: clasificacion, _origIdx: idx, _topeDetalle, _tipoNrc }
   })
 
   const rechazos = clasificadas.filter(r => r._clasificacion === 'Rechazo Sugerido')
