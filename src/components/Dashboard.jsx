@@ -4,6 +4,7 @@ import Modulo1Tab from './tabs/Modulo1Tab.jsx'
 import Modulo2Tab from './tabs/Modulo2Tab.jsx'
 import Modulo3Tab from './tabs/Modulo3Tab.jsx'
 import { exportToExcel } from '../utils/exportExcel.js'
+import { buildRunPayload, persistenceEnabled, saveAnalysisRun } from '../utils/persistence.js'
 
 const TABS = [
   { id: 'resumen', label: 'Resumen', },
@@ -12,14 +13,18 @@ const TABS = [
   { id: 'modulo3', label: 'Módulo 3 — Sobrecupos',  },
 ]
 
-export default function Dashboard({ m1, m2, m3, hasEstado, fileName, onReset }) {
+export default function Dashboard({ m1, m2, m3, hasEstado, hasHorario, hasCupos, fileName, onReset }) {
   const [activeTab, setActiveTab] = useState('resumen')
   const [exporting, setExporting] = useState(false)
   const [decisiones, setDecisiones] = useState({})
   const [m3Decisiones, setM3Decisiones] = useState({})
+  const [saveStatus, setSaveStatus] = useState('idle')
+  const [saveMessage, setSaveMessage] = useState('')
 
   const handleDecision = (origIdx, decision) => {
     setDecisiones(prev => ({ ...prev, [origIdx]: decision }))
+    setSaveStatus('idle')
+    setSaveMessage('')
   }
 
   const handleM3Decision = (curso, decision) => {
@@ -29,6 +34,8 @@ export default function Dashboard({ m1, m2, m3, hasEstado, fileName, onReset }) 
       else next[curso] = decision
       return next
     })
+    setSaveStatus('idle')
+    setSaveMessage('')
   }
 
   const handleExport = async () => {
@@ -37,6 +44,23 @@ export default function Dashboard({ m1, m2, m3, hasEstado, fileName, onReset }) 
       exportToExcel(m1, m2, m3, m1.kpi1, m2.kpi2, m3.kpi3, decisiones, hasEstado)
     } finally {
       setExporting(false)
+    }
+  }
+
+  const handleSave = async () => {
+    if (!persistenceEnabled || saveStatus === 'saving') return
+    setSaveStatus('saving')
+    setSaveMessage('')
+    try {
+      const payload = buildRunPayload({
+        fileName, m1, m2, m3, hasEstado, hasHorario, hasCupos, decisiones, m3Decisiones,
+      })
+      const run = await saveAnalysisRun(payload)
+      setSaveStatus('saved')
+      setSaveMessage(`Ejecución ${run.id} guardada`)
+    } catch (error) {
+      setSaveStatus('error')
+      setSaveMessage(error.message)
     }
   }
 
@@ -73,6 +97,14 @@ export default function Dashboard({ m1, m2, m3, hasEstado, fileName, onReset }) 
               </span>
             )}
             <button
+              onClick={handleSave}
+              disabled={!persistenceEnabled || saveStatus === 'saving'}
+              title={persistenceEnabled ? 'Guardar ejecución anonimizada' : 'Configura VITE_API_URL para habilitar persistencia'}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-700 hover:bg-blue-600 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {saveStatus === 'saving' ? 'Guardando...' : saveStatus === 'saved' ? 'Guardado' : 'Guardar ejecución'}
+            </button>
+            <button
               onClick={handleExport}
               disabled={exporting}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-60"
@@ -94,6 +126,18 @@ export default function Dashboard({ m1, m2, m3, hasEstado, fileName, onReset }) 
           </div>
         </div>
       </header>
+
+      {saveMessage && (
+        <div className={`border-b px-6 py-2 text-center text-xs ${
+          saveStatus === 'error'
+            ? 'border-red-900 bg-red-950/40 text-red-300'
+            : saveStatus === 'saved'
+              ? 'border-emerald-900 bg-emerald-950/30 text-emerald-300'
+              : 'border-slate-800 bg-slate-900 text-slate-600'
+        }`}>
+          {saveMessage}
+        </div>
+      )}
 
       {/* Tabs */}
       <nav className="bg-slate-800/50 border-b border-slate-700 px-6">
@@ -128,7 +172,7 @@ export default function Dashboard({ m1, m2, m3, hasEstado, fileName, onReset }) 
       <footer className="bg-slate-800/30 border-t border-slate-800 px-6 py-3">
         <div className="max-w-7xl mx-auto flex items-center justify-between text-xs text-slate-600">
           <span>Renato Aguirre · Cristóbal Gazitúa · Diego Llull</span>
-          <span>Entregable 4 · Mayo 2026</span>
+          <span>Entrega Final · Junio 2026</span>
         </div>
       </footer>
     </div>

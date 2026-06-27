@@ -106,6 +106,40 @@ export function parseCatalogoFile(file) {
   })
 }
 
+export function parseCuposFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target.result)
+        const workbook = XLSX.read(data, { type: 'array' })
+        const sheet = workbook.Sheets[workbook.SheetNames[0]]
+        const raw = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' })
+
+        let headerRowIdx = 0
+        for (let i = 0; i < Math.min(20, raw.length); i++) {
+          const values = raw[i].map(value => normalizeHeader(value).toUpperCase())
+          if (values.includes('NRC')) {
+            headerRowIdx = i
+            break
+          }
+        }
+
+        const headers = raw[headerRowIdx].map(normalizeHeader)
+        const rows = raw.slice(headerRowIdx + 1)
+          .filter(row => !row.every(value => value === '' || value == null))
+          .map(row => Object.fromEntries(headers.map((header, index) => [header, row[index] ?? ''])))
+
+        resolve(rows)
+      } catch (err) {
+        reject(err)
+      }
+    }
+    reader.onerror = reject
+    reader.readAsArrayBuffer(file)
+  })
+}
+
 export function parseExcelFile(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()

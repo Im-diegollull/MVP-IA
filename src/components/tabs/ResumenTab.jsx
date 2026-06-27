@@ -87,30 +87,36 @@ export default function ResumenTab({ m1, m2, m3, hasEstado }) {
         {/* Pie: distribution by category — donut style */}
         <div className="bg-slate-800 rounded-xl p-5">
           <h3 className="text-sm font-semibold text-slate-300 mb-3">Distribución por Categoría de Error</h3>
-          <ResponsiveContainer width="100%" height={180}>
-            <PieChart>
-              <Pie
-                data={catData}
-                dataKey="value"
-                nameKey="name"
-                cx="50%" cy="50%"
-                innerRadius={52}
-                outerRadius={82}
-                paddingAngle={3}
-                strokeWidth={0}
-              >
-                {catData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-              </Pie>
-              <Tooltip {...TOOLTIP_STYLE} formatter={(v) => [v, 'Solicitudes']} />
-            </PieChart>
-          </ResponsiveContainer>
+          <div className="relative h-[180px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={catData}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%" cy="50%"
+                  innerRadius={52}
+                  outerRadius={82}
+                  paddingAngle={3}
+                  strokeWidth={0}
+                >
+                  {catData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                </Pie>
+                <Tooltip {...TOOLTIP_STYLE} formatter={(v) => [v, 'Solicitudes']} />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+              <span className="text-2xl font-bold text-white tabular-nums">{m1.total}</span>
+              <span className="text-xs text-slate-500">solicitudes</span>
+            </div>
+          </div>
           {/* Custom legend */}
           <div className="mt-3 space-y-1.5">
             {catData
               .sort((a, b) => b.value - a.value)
               .map((entry, i) => {
                 const idx = catData.indexOf(entry)
-                const pct = ((entry.value / m1.total) * 100).toFixed(1)
+                const pct = m1.total > 0 ? ((entry.value / m1.total) * 100).toFixed(1) : '0.0'
                 return (
                   <div key={i} className="flex items-center gap-2 text-xs">
                     <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />
@@ -120,6 +126,10 @@ export default function ResumenTab({ m1, m2, m3, hasEstado }) {
                   </div>
                 )
               })}
+            <div className="flex items-center justify-between border-t border-slate-700 pt-2 text-xs font-semibold">
+              <span className="text-slate-300">Total</span>
+              <span className="text-white tabular-nums">{m1.total}</span>
+            </div>
           </div>
         </div>
 

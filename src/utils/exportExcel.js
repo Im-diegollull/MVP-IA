@@ -26,13 +26,24 @@ export function exportToExcel(modulo1Result, modulo2Result, modulo3Result, kpi1,
       'NRC': r['NRC'] || '',
       'Nombre del Curso': r['Nombre del Curso'] || '',
       'Error Categoría': r['Error Categoría'] || r['Error Categoria'] || '',
+      'Prioridad Académica': r._prioridadAcademica ?? '',
       'Clasificación Sistema': r._clasificacion || '',
       'Detalle Tope': r._topeDetalle || '',
+      'Estado Evidencia Tope': r._topeEvidence?.estadoEvidencia || '',
+      'Tipo Reunión Conflicto': r._topeEvidence?.tipoConflicto || '',
+      'Horario Conflicto': r._topeEvidence?.horarioConflicto || '',
+      'Estado Cupos/Restricción': r._cupoEvidence?.estado || '',
+      'Cupos': r._cupoEvidence?.cupos ?? '',
+      'Inscritos': r._cupoEvidence?.inscritos ?? '',
+      'Disponibles': r._cupoEvidence?.disponibles ?? '',
+      'Carrera Restringida': r._cupoEvidence?.restriccion || '',
+      'Coincide con Carrera': r._cupoEvidence?.restriccion ? (r._cupoEvidence.restriccionCoincide ? 'Sí' : 'No') : '',
+      'Observaciones': r._cupoEvidence?.observaciones || '',
       'Decisión Coordinadora': decisionCoord,
     }
   })
   const ws1 = XLSX.utils.json_to_sheet(sheet1Data)
-  setColWidths(ws1, [10, 12, 10, 8, 30, 20, 18, 55, 20])
+  setColWidths(ws1, [10, 12, 10, 8, 30, 20, 14, 18, 55, 22, 22, 32, 24, 10, 10, 12, 24, 18, 35, 20])
   freezeHeader(ws1)
   XLSX.utils.book_append_sheet(wb, ws1, 'Solicitudes Clasificadas')
 
@@ -45,9 +56,12 @@ export function exportToExcel(modulo1Result, modulo2Result, modulo3Result, kpi1,
     'N° Períodos': p.numPeriodos,
     'Períodos': p.periodos.join(', '),
     'Carreras': p.carreras.join(', '),
+    'Tipo NRC 1': p.tipo1 || '',
+    'Tipo NRC 2': p.tipo2 || '',
+    'Validación de Clase': p.validacionClase || 'Sin evidencia',
   }))
   const ws2 = XLSX.utils.json_to_sheet(sheet2Data)
-  setColWidths(ws2, [60, 10, 10, 16, 12, 30, 30])
+  setColWidths(ws2, [60, 10, 10, 16, 12, 30, 30, 22, 22, 22])
   freezeHeader(ws2)
   XLSX.utils.book_append_sheet(wb, ws2, 'Pares Recurrentes')
 

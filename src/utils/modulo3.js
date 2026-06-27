@@ -1,12 +1,4 @@
-// Module 3: Overcapacity projection — linear regression forecast
-
-function getField(row, ...keys) {
-  for (const k of keys) {
-    const found = Object.keys(row).find(rk => rk.toLowerCase().trim() === k.toLowerCase())
-    if (found && row[found] !== undefined && row[found] !== '') return String(row[found]).trim()
-  }
-  return ''
-}
+import { getField } from './fields.js'
 
 function mean(arr) {
   if (!arr.length) return 0

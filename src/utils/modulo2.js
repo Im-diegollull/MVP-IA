@@ -1,18 +1,11 @@
-// Module 2: Pattern discovery (AI - Apriori-like analysis)
+import { getField } from './fields.js'
+import { validateClassPair } from './schedule.js'
 
 const NRC_REGEX = /NRC\s+(\d+)/i
 
 function extractNRCFromError(errorStr) {
   const match = String(errorStr ?? '').match(NRC_REGEX)
   return match ? match[1] : null
-}
-
-function getField(row, ...keys) {
-  for (const k of keys) {
-    const found = Object.keys(row).find(rk => rk.toLowerCase().trim() === k.toLowerCase())
-    if (found && row[found] !== undefined && row[found] !== '') return String(row[found]).trim()
-  }
-  return ''
 }
 
 export function runModulo2(rows, catalogoRows = [], nrcInfoMap = new Map()) {
@@ -105,6 +98,7 @@ export function runModulo2(rows, catalogoRows = [], nrcInfoMap = new Map()) {
     numPeriodos: p.periodos.size,
     tipo1: nrcInfoMap.get(p.nrc1)?.tipo || null,
     tipo2: nrcInfoMap.get(p.nrc2)?.tipo || null,
+    validacionClase: validateClassPair(p.nrc1, p.nrc2, nrcInfoMap),
   }))
 
   const recurrentes = pares.filter(p => p.numPeriodos >= 2)
@@ -112,6 +106,7 @@ export function runModulo2(rows, catalogoRows = [], nrcInfoMap = new Map()) {
   // Sort by solicitudes desc
   pares.sort((a, b) => b.solicitudes - a.solicitudes)
   recurrentes.sort((a, b) => b.solicitudes - a.solicitudes || b.numPeriodos - a.numPeriodos)
+  const recurrentesVerificados = recurrentes.filter(p => p.validacionClase === 'Clase verificada')
 
   // Apriori-like: frequent itemsets from course names per period
   const transacciones = {}
@@ -152,6 +147,7 @@ export function runModulo2(rows, catalogoRows = [], nrcInfoMap = new Map()) {
     numPares: pares.length,
     numRecurrentes: recurrentes.length,
     numTopes: topes.length,
+    numRecurrentesVerificados: recurrentesVerificados.length,
     kpi2: recurrentes.length,
   }
 }

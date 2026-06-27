@@ -1,19 +1,33 @@
-// Module 1: Rule-based filtering (not AI)
+import { getAcademicPriority, getField } from './fields.js'
+import { getCapacityEvidence } from './capacity.js'
 
 const REJECTION_CATEGORIES = ['Tope de Horario', 'Curso Ligado']
 const MANUAL_CATEGORIES = ['Sección Cerrada', 'Creditos', 'Restricción Carrera']
 
-function getErrorCategoria(row) {
-  return String(row['Error Categoría'] ?? row['Error Categoria'] ?? row['Error categoria'] ?? '').trim()
+function buildTopeEvidence(row, nrcInfoMap) {
+  const error = getField(row, 'Error')
+  const nrcSolicitado = getField(row, 'NRC')
+  const nrcConflicto = error.match(/NRC\s+(\d+)/i)?.[1] ?? null
+  if (!nrcConflicto) return null
+
+  const solicitado = nrcInfoMap.get(nrcSolicitado)
+  const conflicto = nrcInfoMap.get(nrcConflicto)
+  return {
+    nrcSolicitado,
+    nrcConflicto,
+    cursoSolicitado: getField(row, 'Nombre del Curso', 'Nombre del curso') || solicitado?.titulo || '',
+    cursoConflicto: conflicto?.titulo || '',
+    tipoSolicitado: solicitado?.tipo || '',
+    tipoConflicto: conflicto?.tipo || '',
+    horarioSolicitado: solicitado?.horario || '',
+    horarioConflicto: conflicto?.horario || '',
+    estadoEvidencia: conflicto?.validacionClase || 'Sin evidencia',
+  }
 }
 
-function getEstado(row) {
-  return String(row['Estado'] ?? '').trim()
-}
-
-export function runModulo1(rows, hasEstado, nrcInfoMap = new Map()) {
+export function runModulo1(rows, hasEstado, nrcInfoMap = new Map(), cuposMap = new Map()) {
   const clasificadas = rows.map((row, idx) => {
-    const cat = getErrorCategoria(row)
+    const cat = getField(row, 'Error Categoría', 'Error Categoria', 'Error categoria')
     let clasificacion = 'Sin Clasificar'
 
     if (REJECTION_CATEGORIES.includes(cat)) {
@@ -22,24 +36,36 @@ export function runModulo1(rows, hasEstado, nrcInfoMap = new Map()) {
       clasificacion = 'Revisión Manual'
     }
 
-    const errorStr = String(row['Error'] ?? row['error'] ?? '').trim()
-    const nrcConflicto = errorStr.match(/NRC\s+(\d+)/i)?.[1] ?? null
-
-    let _topeDetalle = null
-    if (cat === 'Tope de Horario' && nrcConflicto) {
-      const info = nrcInfoMap.get(nrcConflicto)
-      if (info) {
-        _topeDetalle = `Tope con ${info.tipo} de ${info.titulo} (NRC ${nrcConflicto})${info.horario ? ' — ' + info.horario : ''}`
-      } else {
-        _topeDetalle = `NRC ${nrcConflicto} (sin detalle)`
-      }
+    const prioridad = getAcademicPriority(row)
+    const cupoEvidence = getCapacityEvidence(row, cuposMap)
+    if (clasificacion === 'Sin Clasificar' && (cupoEvidence.estado === 'Sin cupos' || cupoEvidence.restriccion)) {
+      clasificacion = 'Revisión Manual'
     }
 
-    return { ...row, _clasificacion: clasificacion, _origIdx: idx, _topeDetalle }
+    const topeEvidence = cat === 'Tope de Horario' ? buildTopeEvidence(row, nrcInfoMap) : null
+    const topeDetalle = topeEvidence
+      ? `NRC ${topeEvidence.nrcSolicitado || 'no informado'} con NRC ${topeEvidence.nrcConflicto}` +
+        `${topeEvidence.cursoConflicto ? ` (${topeEvidence.cursoConflicto})` : ''}` +
+        `${topeEvidence.tipoConflicto ? ` · ${topeEvidence.tipoConflicto}` : ''}` +
+        `${topeEvidence.horarioConflicto ? ` · ${topeEvidence.horarioConflicto}` : ''}` +
+        ` · ${topeEvidence.estadoEvidencia}`
+      : null
+
+    return {
+      ...row,
+      _clasificacion: clasificacion,
+      _origIdx: idx,
+      _prioridadAcademica: prioridad,
+      _cupoEvidence: cupoEvidence,
+      _topeEvidence: topeEvidence,
+      _topeDetalle: topeDetalle,
+    }
   })
 
   const rechazos = clasificadas.filter(r => r._clasificacion === 'Rechazo Sugerido')
-  const revision = clasificadas.filter(r => r._clasificacion === 'Revisión Manual')
+  const revision = clasificadas
+    .filter(r => r._clasificacion === 'Revisión Manual')
+    .sort((a, b) => (b._prioridadAcademica ?? -Infinity) - (a._prioridadAcademica ?? -Infinity) || a._origIdx - b._origIdx)
   const sinClasificar = clasificadas.filter(r => r._clasificacion === 'Sin Clasificar')
 
   let kpi1 = null
@@ -47,7 +73,7 @@ export function runModulo1(rows, hasEstado, nrcInfoMap = new Map()) {
 
   if (hasEstado) {
     const M = rechazos.length
-    const C = rechazos.filter(r => getEstado(r).toLowerCase().includes('rechaz')).length
+    const C = rechazos.filter(r => getField(r, 'Estado').toLowerCase().includes('rechaz')).length
     kpi1 = M > 0 ? ((C / M) * 100).toFixed(1) : '0.0'
     kpi1Details = { M, C }
   }
@@ -55,14 +81,14 @@ export function runModulo1(rows, hasEstado, nrcInfoMap = new Map()) {
   // Breakdown by category
   const byCategory = {}
   clasificadas.forEach(r => {
-    const cat = getErrorCategoria(r) || 'Sin Categoría'
+    const cat = getField(r, 'Error Categoría', 'Error Categoria', 'Error categoria') || 'Sin Categoría'
     byCategory[cat] = (byCategory[cat] || 0) + 1
   })
 
   // Breakdown by period
   const byPeriodo = {}
   clasificadas.forEach(r => {
-    const periodo = String(r['Catalogo'] ?? r['catalogo'] ?? r['Período'] ?? '').trim()
+    const periodo = getField(r, 'Catalogo', 'Período', 'Periodo')
     if (periodo) {
       if (!byPeriodo[periodo]) byPeriodo[periodo] = { total: 0, rechazos: 0, revision: 0 }
       byPeriodo[periodo].total++
@@ -74,7 +100,7 @@ export function runModulo1(rows, hasEstado, nrcInfoMap = new Map()) {
   // Breakdown by carrera
   const byCarrera = {}
   clasificadas.forEach(r => {
-    const carrera = String(r['Carrera'] ?? '').trim()
+    const carrera = getField(r, 'Carrera')
     if (carrera) byCarrera[carrera] = (byCarrera[carrera] || 0) + 1
   })
 
@@ -88,6 +114,8 @@ export function runModulo1(rows, hasEstado, nrcInfoMap = new Map()) {
     byCategory,
     byPeriodo,
     byCarrera,
+    conPrioridad: clasificadas.filter(r => r._prioridadAcademica !== null).length,
+    conEvidenciaCupos: clasificadas.filter(r => r._cupoEvidence.estado !== 'Sin evidencia').length,
     total: clasificadas.length,
   }
 }

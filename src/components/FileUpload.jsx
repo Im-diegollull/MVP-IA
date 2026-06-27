@@ -4,13 +4,16 @@ export default function FileUpload({ onFileLoaded }) {
   const [dragging, setDragging] = useState(false)
   const [draggingCat, setDraggingCat] = useState(false)
   const [draggingHorario, setDraggingHorario] = useState(false)
+  const [draggingCupos, setDraggingCupos] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [catalogoFile, setCatalogoFile] = useState(null)
   const [horarioFile, setHorarioFile] = useState(null)
+  const [cuposFile, setCuposFile] = useState(null)
   const inputRef = useRef()
   const inputCatRef = useRef()
   const inputHorarioRef = useRef()
+  const inputCuposRef = useRef()
 
   const handleFile = async (file) => {
     if (!file) return
@@ -21,13 +24,15 @@ export default function FileUpload({ onFileLoaded }) {
     setLoading(true)
     setError(null)
     try {
-      const { parseExcelFile, parseCatalogoFile, parseHorarioFile } = await import('../utils/parseExcel.js')
+      const { parseExcelFile, parseCatalogoFile, parseHorarioFile, parseCuposFile } = await import('../utils/parseExcel.js')
       const result = await parseExcelFile(file)
       let catalogoRows = []
       if (catalogoFile) catalogoRows = await parseCatalogoFile(catalogoFile)
       let horarioRows = []
       if (horarioFile) horarioRows = await parseHorarioFile(horarioFile)
-      onFileLoaded(result, file.name, catalogoRows, horarioRows)
+      let cuposRows = []
+      if (cuposFile) cuposRows = await parseCuposFile(cuposFile)
+      onFileLoaded(result, file.name, catalogoRows, horarioRows, cuposRows)
     } catch (e) {
       setError(`Error al leer el archivo: ${e.message}`)
     } finally {
@@ -55,6 +60,16 @@ export default function FileUpload({ onFileLoaded }) {
     setError(null)
   }
 
+  const handleCuposFile = (file) => {
+    if (!file) return
+    if (!file.name.match(/\.(xlsx|xls)$/i)) {
+      setError('El archivo de cupos debe ser un Excel (.xlsx o .xls)')
+      return
+    }
+    setCuposFile(file)
+    setError(null)
+  }
+
   const onDrop = (e) => {
     e.preventDefault()
     setDragging(false)
@@ -73,6 +88,12 @@ export default function FileUpload({ onFileLoaded }) {
     handleHorarioFile(e.dataTransfer.files[0])
   }
 
+  const onDropCupos = (e) => {
+    e.preventDefault()
+    setDraggingCupos(false)
+    handleCuposFile(e.dataTransfer.files[0])
+  }
+
   const onInputChange = (e) => {
     handleFile(e.target.files[0])
   }
@@ -83,6 +104,10 @@ export default function FileUpload({ onFileLoaded }) {
 
   const onHorarioInputChange = (e) => {
     handleHorarioFile(e.target.files[0])
+  }
+
+  const onCuposInputChange = (e) => {
+    handleCuposFile(e.target.files[0])
   }
 
   return (
@@ -183,6 +208,30 @@ export default function FileUpload({ onFileLoaded }) {
         {horarioFile && (
           <span className="ml-auto text-emerald-400 text-xs shrink-0">Listo</span>
         )}
+      </div>
+
+      {/* Optional: cupos and restrictions */}
+      <div
+        className={`w-full max-w-lg border border-dashed rounded-lg p-4 flex items-center gap-3 cursor-pointer transition-all duration-200 mt-2
+          ${draggingCupos ? 'border-amber-400 bg-amber-950/30' : cuposFile ? 'border-emerald-600 bg-emerald-950/20' : 'border-slate-700 bg-slate-800/30 hover:border-slate-600'}`}
+        onDragOver={(e) => { e.preventDefault(); setDraggingCupos(true) }}
+        onDragLeave={() => setDraggingCupos(false)}
+        onDrop={onDropCupos}
+        onClick={() => inputCuposRef.current?.click()}
+      >
+        <input ref={inputCuposRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={onCuposInputChange} />
+        <svg className="w-6 h-6 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 7h16M4 12h16M4 17h10" />
+        </svg>
+        <div className="min-w-0">
+          <p className="text-xs font-medium text-slate-400">
+            Cupos y restricciones <span className="text-slate-600">(opcional)</span>
+          </p>
+          <p className="text-xs text-slate-500 truncate">
+            {cuposFile ? cuposFile.name : 'NRC, cupos, inscritos, disponibles y carrera restringida'}
+          </p>
+        </div>
+        {cuposFile && <span className="ml-auto text-emerald-400 text-xs shrink-0">Listo</span>}
       </div>
 
       {error && (

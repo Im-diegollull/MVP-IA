@@ -24,9 +24,14 @@ function Badge({ text }) {
 export default function Modulo1Tab({ m1, hasEstado, decisiones = {}, onDecision }) {
   const [filter, setFilter] = useState('Todos')
   const [page, setPage] = useState(0)
+  const [selectedRow, setSelectedRow] = useState(null)
 
   const options = ['Todos', 'Rechazo Sugerido', 'Revisión Manual', 'Sin Clasificar']
-  const filtered = filter === 'Todos' ? m1.clasificadas : m1.clasificadas.filter(r => r._clasificacion === filter)
+  const filtered = filter === 'Todos'
+    ? m1.clasificadas
+    : filter === 'Revisión Manual'
+      ? m1.revision
+      : m1.clasificadas.filter(r => r._clasificacion === filter)
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
   const pageData = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
 
@@ -87,6 +92,10 @@ export default function Modulo1Tab({ m1, hasEstado, decisiones = {}, onDecision 
       {hasEstado && m1.kpi1 && (
         <div className="bg-slate-800 rounded-xl p-5 border border-slate-700">
           <h3 className="text-sm font-semibold text-slate-300 mb-3">KPI 1 — Comparación Sistema vs. Coordinadora</h3>
+          <p className="text-xs text-slate-400 mb-4 max-w-3xl">
+            Mide qué porcentaje de los rechazos sugeridos por el sistema también fue rechazado por la coordinadora.
+            Fórmula: coincidencias / rechazos sugeridos × 100.
+          </p>
           <div className="flex items-center gap-6 mb-4">
             <div>
               <span className="text-3xl font-bold text-blue-400">{m1.kpi1}%</span>
@@ -148,8 +157,10 @@ export default function Modulo1Tab({ m1, hasEstado, decisiones = {}, onDecision 
                 <th className="text-left py-2 pr-3">NRC</th>
                 <th className="text-left py-2 pr-3">Curso</th>
                 <th className="text-left py-2 pr-3">Categoría</th>
+                <th className="text-right py-2 pr-3">Prioridad</th>
                 <th className="text-left py-2 pr-3">Clasificación</th>
-                <th className="text-left py-2 pr-3">Detalle Tope</th>
+                <th className="text-left py-2 pr-3">Cupos / Restricción</th>
+                <th className="text-left py-2 pr-3">Evidencia</th>
                 <th className="text-left py-2">{modoInteractivo ? 'Decisión' : 'Estado Real'}</th>
               </tr>
             </thead>
@@ -164,9 +175,29 @@ export default function Modulo1Tab({ m1, hasEstado, decisiones = {}, onDecision 
                     <td className="py-1.5 pr-3">{r['NRC'] || '—'}</td>
                     <td className="py-1.5 pr-3 max-w-[140px] truncate" title={r['Nombre del Curso']}>{r['Nombre del Curso'] || '—'}</td>
                     <td className="py-1.5 pr-3">{r['Error Categoría'] || r['Error Categoria'] || '—'}</td>
+                    <td className="py-1.5 pr-3 text-right font-semibold text-amber-300 tabular-nums">
+                      {r._prioridadAcademica ?? '—'}
+                    </td>
                     <td className="py-1.5 pr-3"><Badge text={r._clasificacion} /></td>
-                    <td className="py-1.5 pr-3 max-w-[200px] truncate text-slate-500" title={r._topeDetalle || ''}>
-                      {r._topeDetalle || '—'}
+                    <td className="py-1.5 pr-3 min-w-[150px]">
+                      <span className={`inline-flex px-2 py-0.5 rounded text-xs border ${
+                        r._cupoEvidence?.estado === 'Con cupos'
+                          ? 'bg-emerald-950/40 text-emerald-300 border-emerald-800'
+                          : ['Sin cupos', 'Restricción coincide', 'Restricción no coincide'].includes(r._cupoEvidence?.estado)
+                            ? 'bg-red-950/40 text-red-300 border-red-800'
+                            : 'bg-slate-700/50 text-slate-400 border-slate-600'
+                      }`}>
+                        {r._cupoEvidence?.estado || 'Sin evidencia'}
+                      </span>
+                    </td>
+                    <td className="py-1.5 pr-3">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedRow(r)}
+                        className="px-2 py-1 rounded bg-slate-700 text-slate-300 hover:bg-slate-600 transition-colors whitespace-nowrap"
+                      >
+                        Ver detalle
+                      </button>
                     </td>
                     {modoInteractivo ? (
                       <td className="py-1.5">
@@ -218,6 +249,65 @@ export default function Modulo1Tab({ m1, hasEstado, decisiones = {}, onDecision 
           </div>
         )}
       </div>
+
+      {selectedRow && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4" onClick={() => setSelectedRow(null)}>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="detalle-solicitud-title"
+            className="w-full max-w-3xl max-h-[85vh] overflow-y-auto rounded-lg border border-slate-600 bg-slate-800 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="sticky top-0 flex items-center justify-between gap-4 border-b border-slate-700 bg-slate-800 px-5 py-4">
+              <div>
+                <h3 id="detalle-solicitud-title" className="text-base font-semibold text-white">Evidencia de la solicitud</h3>
+                <p className="text-xs text-slate-400">NRC {selectedRow['NRC'] || 'no informado'} · Prioridad {selectedRow._prioridadAcademica ?? 'no informada'}</p>
+              </div>
+              <button type="button" onClick={() => setSelectedRow(null)} className="w-8 h-8 rounded flex items-center justify-center bg-slate-700 text-slate-300 hover:bg-slate-600" aria-label="Cerrar detalle">×</button>
+            </div>
+
+            <div className="p-5 space-y-5 text-sm">
+              <section>
+                <h4 className="text-xs font-semibold uppercase text-slate-500 mb-2">Solicitud</h4>
+                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
+                  <div><dt className="text-slate-500">Curso</dt><dd className="text-slate-200">{selectedRow['Nombre del Curso'] || 'No informado'}</dd></div>
+                  <div><dt className="text-slate-500">Categoría</dt><dd className="text-slate-200">{selectedRow['Error Categoría'] || selectedRow['Error Categoria'] || 'No informada'}</dd></div>
+                  <div className="sm:col-span-2"><dt className="text-slate-500">Mensaje original</dt><dd className="text-slate-200 break-words">{selectedRow['Error'] || 'No informado'}</dd></div>
+                </dl>
+              </section>
+
+              <section className="border-t border-slate-700 pt-4">
+                <h4 className="text-xs font-semibold uppercase text-slate-500 mb-2">Detalle del tope</h4>
+                {selectedRow._topeEvidence ? (
+                  <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
+                    <div><dt className="text-slate-500">NRC solicitado</dt><dd className="text-slate-200">{selectedRow._topeEvidence.nrcSolicitado || 'No informado'}</dd></div>
+                    <div><dt className="text-slate-500">NRC en conflicto</dt><dd className="text-slate-200">{selectedRow._topeEvidence.nrcConflicto}</dd></div>
+                    <div><dt className="text-slate-500">Curso en conflicto</dt><dd className="text-slate-200">{selectedRow._topeEvidence.cursoConflicto || 'No informado'}</dd></div>
+                    <div><dt className="text-slate-500">Tipo de reunión</dt><dd className="text-slate-200">{selectedRow._topeEvidence.tipoConflicto || 'No informado'}</dd></div>
+                    <div className="sm:col-span-2"><dt className="text-slate-500">Día y hora</dt><dd className="text-slate-200">{selectedRow._topeEvidence.horarioConflicto || 'No informado'}</dd></div>
+                    <div className="sm:col-span-2"><dt className="text-slate-500">Estado de evidencia</dt><dd className="text-sky-300 font-medium">{selectedRow._topeEvidence.estadoEvidencia}</dd></div>
+                  </dl>
+                ) : <p className="text-slate-500">Esta solicitud no contiene un tope de horario verificable.</p>}
+              </section>
+
+              <section className="border-t border-slate-700 pt-4">
+                <h4 className="text-xs font-semibold uppercase text-slate-500 mb-2">Cupos y restricciones</h4>
+                <dl className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-2">
+                  <div><dt className="text-slate-500">Cupos</dt><dd className="text-slate-200">{selectedRow._cupoEvidence?.cupos ?? '—'}</dd></div>
+                  <div><dt className="text-slate-500">Inscritos</dt><dd className="text-slate-200">{selectedRow._cupoEvidence?.inscritos ?? '—'}</dd></div>
+                  <div><dt className="text-slate-500">Disponibles</dt><dd className="text-slate-200">{selectedRow._cupoEvidence?.disponibles ?? '—'}</dd></div>
+                  <div><dt className="text-slate-500">Estado</dt><dd className="text-slate-200">{selectedRow._cupoEvidence?.estado || 'Sin evidencia'}</dd></div>
+                  <div className="col-span-2"><dt className="text-slate-500">Carrera restringida</dt><dd className="text-slate-200">{selectedRow._cupoEvidence?.restriccion || 'No informada'}</dd></div>
+                  <div className="col-span-2"><dt className="text-slate-500">Coincide con carrera</dt><dd className="text-slate-200">{selectedRow._cupoEvidence?.restriccion ? (selectedRow._cupoEvidence.restriccionCoincide ? 'Sí' : 'No') : 'No aplica'}</dd></div>
+                  <div className="col-span-2"><dt className="text-slate-500">Fuente</dt><dd className="text-slate-200">{selectedRow._cupoEvidence?.fuente || 'No informada'}</dd></div>
+                  <div className="col-span-full"><dt className="text-slate-500">Observaciones</dt><dd className="text-slate-200 break-words">{selectedRow._cupoEvidence?.observaciones || 'Sin observaciones'}</dd></div>
+                </dl>
+              </section>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

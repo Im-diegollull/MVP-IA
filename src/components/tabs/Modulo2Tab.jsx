@@ -26,11 +26,21 @@ function buildPairLabel(p) {
   return `${a} vs ${b}`
 }
 
+const VALIDATION_STYLE = {
+  'Clase verificada': 'bg-emerald-950/40 text-emerald-300 border-emerald-800',
+  'Actividad no clase': 'bg-amber-950/40 text-amber-300 border-amber-800',
+  'Sin evidencia': 'bg-slate-700/50 text-slate-400 border-slate-600',
+}
+
 export default function Modulo2Tab({ m2 }) {
   const [showAll, setShowAll] = useState(false)
   const [page, setPage] = useState(0)
+  const [validationFilter, setValidationFilter] = useState('Todos')
 
-  const tableData = showAll ? m2.pares : m2.recurrentes
+  const baseTableData = showAll ? m2.pares : m2.recurrentes
+  const tableData = validationFilter === 'Todos'
+    ? baseTableData
+    : baseTableData.filter(pair => pair.validacionClase === validationFilter)
   const totalPages = Math.ceil(tableData.length / PAGE_SIZE)
   const pageData = tableData.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
 
@@ -41,16 +51,15 @@ export default function Modulo2Tab({ m2 }) {
     Períodos: p.numPeriodos,
   }))
 
-  const maxSol = Math.max(...(m2.recurrentes.map(p => p.solicitudes) || [1]))
-
   return (
     <div className="space-y-5">
       {/* Summary counters */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {[
           { label: 'Total Topes Horario', value: m2.numTopes, color: 'text-white' },
           { label: 'Pares Únicos', value: m2.numPares, color: 'text-blue-400' },
           { label: 'Pares Recurrentes', value: m2.numRecurrentes, color: 'text-violet-400', sub: '(2+ períodos)' },
+          { label: 'Recurrentes Clase Verificada', value: m2.numRecurrentesVerificados, color: 'text-sky-400', sub: '(ambos NRC)' },
           { label: 'KPI 2 — Objetivo ≥15', value: m2.kpi2, color: m2.kpi2 >= 15 ? 'text-emerald-400' : 'text-red-400' },
         ].map(s => (
           <div key={s.label} className="bg-slate-800 rounded-xl p-4 text-center">
@@ -67,6 +76,7 @@ export default function Modulo2Tab({ m2 }) {
         {' '}Se identificaron <strong className="text-white">{m2.frecuentItemsets.length}</strong> pares frecuentes de cursos
         con soporte ≥2 (co-ocurrencia en transacciones del mismo estudiante y período).
         Los pares recurrentes son aquellos que generan conflictos en <strong className="text-white">2 o más períodos distintos</strong>.
+        {' '}La evidencia de clase se valida contra el tipo de reunión del archivo de horario.
       </div>
 
       {/* Bar chart top 10 */}
@@ -125,10 +135,20 @@ export default function Modulo2Tab({ m2 }) {
             <h3 className="text-sm font-semibold text-slate-300">Detalle de Pares de Conflicto</h3>
             <p className="text-xs text-slate-500 mt-0.5">{showAll ? `Todos los pares (${m2.numPares})` : `Solo recurrentes (${m2.numRecurrentes})`}</p>
           </div>
-          <button onClick={() => { setShowAll(v => !v); setPage(0) }}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-700 text-slate-300 hover:bg-slate-600 transition-colors">
-            {showAll ? 'Mostrar solo recurrentes' : 'Mostrar todos los pares'}
-          </button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <select
+              value={validationFilter}
+              onChange={(event) => { setValidationFilter(event.target.value); setPage(0) }}
+              className="h-8 rounded border border-slate-600 bg-slate-700 px-2 text-xs text-slate-200"
+              aria-label="Filtrar por evidencia de clase"
+            >
+              {['Todos', 'Clase verificada', 'Actividad no clase', 'Sin evidencia'].map(option => <option key={option}>{option}</option>)}
+            </select>
+            <button onClick={() => { setShowAll(v => !v); setPage(0) }}
+              className="px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-700 text-slate-300 hover:bg-slate-600 transition-colors">
+              {showAll ? 'Mostrar solo recurrentes' : 'Mostrar todos los pares'}
+            </button>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -139,6 +159,7 @@ export default function Modulo2Tab({ m2 }) {
                 <th className="text-right py-2 pr-3">Solicitudes</th>
                 <th className="text-right py-2 pr-3">N° Períodos</th>
                 <th className="text-left py-2 pr-3">Períodos</th>
+                <th className="text-left py-2 pr-3">Validación</th>
                 <th className="text-left py-2">Carreras</th>
               </tr>
             </thead>
@@ -156,6 +177,11 @@ export default function Modulo2Tab({ m2 }) {
                   <td className="text-right py-1.5 pr-3 font-bold text-white">{p.solicitudes}</td>
                   <td className="text-right py-1.5 pr-3 text-violet-400">{p.numPeriodos}</td>
                   <td className="py-1.5 pr-3 text-slate-500">{p.periodos.join(', ')}</td>
+                  <td className="py-1.5 pr-3">
+                    <span className={`inline-flex whitespace-nowrap px-2 py-0.5 rounded text-xs border ${VALIDATION_STYLE[p.validacionClase] || VALIDATION_STYLE['Sin evidencia']}`}>
+                      {p.validacionClase || 'Sin evidencia'}
+                    </span>
+                  </td>
                   <td className="py-1.5 text-slate-500">{p.carreras.join(', ')}</td>
                 </tr>
               ))}
