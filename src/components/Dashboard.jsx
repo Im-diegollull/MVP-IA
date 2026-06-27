@@ -41,7 +41,7 @@ export default function Dashboard({ m1, m2, m3, hasEstado, hasHorario, hasCupos,
   const handleExport = async () => {
     setExporting(true)
     try {
-      exportToExcel(m1, m2, m3, m1.kpi1, m2.kpi2, m3.kpi3, decisiones, hasEstado)
+      exportToExcel(m1, m2, m3, m1.kpi1, m2.kpi2, m3.kpi3, decisiones, hasEstado, m3Decisiones)
     } finally {
       setExporting(false)
     }

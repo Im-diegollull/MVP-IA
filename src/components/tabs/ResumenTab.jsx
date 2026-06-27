@@ -1,7 +1,7 @@
 import React from 'react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend, LineChart, Line,
+  PieChart, Pie, Cell, Legend, LineChart, Line, Label,
 } from 'recharts'
 import KPICard from '../KPICard.jsx'
 
@@ -87,29 +87,35 @@ export default function ResumenTab({ m1, m2, m3, hasEstado }) {
         {/* Pie: distribution by category — donut style */}
         <div className="bg-slate-800 rounded-xl p-5">
           <h3 className="text-sm font-semibold text-slate-300 mb-3">Distribución por Categoría de Error</h3>
-          <div className="relative h-[180px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={catData}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%" cy="50%"
-                  innerRadius={52}
-                  outerRadius={82}
-                  paddingAngle={3}
-                  strokeWidth={0}
-                >
-                  {catData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                </Pie>
-                <Tooltip {...TOOLTIP_STYLE} formatter={(v) => [v, 'Solicitudes']} />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-2xl font-bold text-white tabular-nums">{m1.total}</span>
-              <span className="text-xs text-slate-500">solicitudes</span>
-            </div>
-          </div>
+          <ResponsiveContainer width="100%" height={180}>
+            <PieChart>
+              <Pie
+                data={catData}
+                dataKey="value"
+                nameKey="name"
+                cx="50%" cy="50%"
+                innerRadius={52}
+                outerRadius={82}
+                paddingAngle={3}
+                strokeWidth={0}
+              >
+                {catData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                <Label
+                  content={({ viewBox }) => {
+                    const { cx, cy } = viewBox
+                    return (
+                      <text>
+                        <tspan x={cx} y={cy - 4} textAnchor="middle" fill="#ffffff" fontSize="20" fontWeight="bold">{m1.total}</tspan>
+                        <tspan x={cx} y={cy + 14} textAnchor="middle" fill="#94a3b8" fontSize="10">Total</tspan>
+                      </text>
+                    )
+                  }}
+                  position="center"
+                />
+              </Pie>
+              <Tooltip {...TOOLTIP_STYLE} formatter={(v) => [v, 'Solicitudes']} />
+            </PieChart>
+          </ResponsiveContainer>
           {/* Custom legend */}
           <div className="mt-3 space-y-1.5">
             {catData
@@ -126,9 +132,11 @@ export default function ResumenTab({ m1, m2, m3, hasEstado }) {
                   </div>
                 )
               })}
-            <div className="flex items-center justify-between border-t border-slate-700 pt-2 text-xs font-semibold">
-              <span className="text-slate-300">Total</span>
-              <span className="text-white tabular-nums">{m1.total}</span>
+            <div className="flex items-center gap-2 text-xs border-t border-slate-700 pt-1.5 mt-0.5">
+              <span className="w-2.5 h-2.5 shrink-0" />
+              <span className="text-slate-200 flex-1 font-semibold">Total</span>
+              <span className="text-white font-bold shrink-0 tabular-nums">{m1.total}</span>
+              <span className="text-slate-500 shrink-0 w-10 text-right tabular-nums">{m1.total > 0 ? '100%' : '0%'}</span>
             </div>
           </div>
         </div>

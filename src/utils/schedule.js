@@ -6,10 +6,14 @@ export const TIPO_MAP = {
   AYUD: 'Ayudantía',
   AYON: 'Ayudantía Online',
   LABT: 'Laboratorio',
+  EXAM: 'Examen',
+  CTRL: 'Control',
+  PRUE: 'Prueba',
+  TEST: 'Prueba',
 }
 
 const CLASS_TYPES = new Set(['CLAS', 'OLIN'])
-const NON_CLASS_TYPES = new Set(['AYUD', 'AYON', 'LABT'])
+const NON_CLASS_TYPES = new Set(['AYUD', 'AYON', 'LABT', 'EXAM', 'CTRL', 'PRUE', 'TEST'])
 const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
 
 export function validateMeetingTypes(typeCodes) {

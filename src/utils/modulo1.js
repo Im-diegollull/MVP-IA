@@ -44,9 +44,9 @@ export function runModulo1(rows, hasEstado, nrcInfoMap = new Map(), cuposMap = n
 
     const topeEvidence = cat === 'Tope de Horario' ? buildTopeEvidence(row, nrcInfoMap) : null
     const topeDetalle = topeEvidence
-      ? `NRC ${topeEvidence.nrcSolicitado || 'no informado'} con NRC ${topeEvidence.nrcConflicto}` +
-        `${topeEvidence.cursoConflicto ? ` (${topeEvidence.cursoConflicto})` : ''}` +
-        `${topeEvidence.tipoConflicto ? ` · ${topeEvidence.tipoConflicto}` : ''}` +
+      ? `${topeEvidence.tipoSolicitado ? `${topeEvidence.tipoSolicitado}: ` : ''}${topeEvidence.cursoSolicitado || `NRC ${topeEvidence.nrcSolicitado}`}` +
+        ` topa con ${topeEvidence.tipoConflicto ? `${topeEvidence.tipoConflicto}: ` : ''}` +
+        `${topeEvidence.cursoConflicto || `NRC ${topeEvidence.nrcConflicto}`}` +
         `${topeEvidence.horarioConflicto ? ` · ${topeEvidence.horarioConflicto}` : ''}` +
         ` · ${topeEvidence.estadoEvidencia}`
       : null
@@ -59,6 +59,7 @@ export function runModulo1(rows, hasEstado, nrcInfoMap = new Map(), cuposMap = n
       _cupoEvidence: cupoEvidence,
       _topeEvidence: topeEvidence,
       _topeDetalle: topeDetalle,
+      _tipoNrc: topeEvidence?.tipoSolicitado || nrcInfoMap.get(getField(row, 'NRC'))?.tipo || null,
     }
   })
 

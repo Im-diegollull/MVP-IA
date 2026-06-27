@@ -16,14 +16,14 @@ function truncate(str, max = 30) {
 }
 
 function tipoLabel(tipo, curso) {
-  if (!tipo || tipo === 'Clase') return curso
-  return `${tipo} de ${curso}`
+  if (!tipo) return curso
+  return `${tipo}: ${curso}`
 }
 
 function buildPairLabel(p) {
   const a = tipoLabel(p.tipo1, p.cursoNrc1 || p.curso1 || `NRC ${p.nrc1}`)
   const b = tipoLabel(p.tipo2, p.cursoNrc2 || p.curso2 || `NRC ${p.nrc2}`)
-  return `${a} vs ${b}`
+  return `${a} topa con ${b}`
 }
 
 const VALIDATION_STYLE = {
@@ -46,7 +46,7 @@ export default function Modulo2Tab({ m2 }) {
 
   // Top 10 recurrentes for bar chart
   const chartData = m2.recurrentes.slice(0, 10).map(p => ({
-    name: truncate(p.displayKey, 35),
+    name: truncate(buildPairLabel(p), 45),
     Solicitudes: p.solicitudes,
     Períodos: p.numPeriodos,
   }))
@@ -100,7 +100,6 @@ export default function Modulo2Tab({ m2 }) {
         </div>
       )}
 
-      {/* Frequent itemsets from Apriori */}
       {m2.frecuentItemsets.length > 0 && (
         <div className="bg-slate-800 rounded-xl p-5">
           <h3 className="text-sm font-semibold text-slate-300 mb-3">Itemsets Frecuentes — Análisis Apriori</h3>

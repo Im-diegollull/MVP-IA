@@ -45,9 +45,11 @@ test('valida clase, actividad no clase y falta de evidencia', () => {
     { NRC: '100', 'TIPO DE REUNION': 'CLAS', TITULO: 'Cálculo', Lunes: '08:30-09:40' },
     { NRC: '200', 'TIPO DE REUNION': 'OLIN', TITULO: 'Física', Martes: '10:00-11:10' },
     { NRC: '300', 'TIPO DE REUNION': 'AYUD', TITULO: 'Cálculo', Viernes: '12:00-13:10' },
+    { NRC: '400', 'TIPO DE REUNION': 'EXAM', TITULO: 'Cálculo', Viernes: '15:00-16:10' },
   ])
   assert.equal(validateClassPair('100', '200', map), 'Clase verificada')
   assert.equal(validateClassPair('100', '300', map), 'Actividad no clase')
+  assert.equal(validateClassPair('100', '400', map), 'Actividad no clase')
   assert.equal(validateClassPair('100', '999', map), 'Sin evidencia')
 })
 

@@ -8,7 +8,7 @@ function freezeHeader(ws) {
   ws['!freeze'] = { xSplit: 0, ySplit: 1, topLeftCell: 'A2', activePane: 'bottomLeft' }
 }
 
-export function exportToExcel(modulo1Result, modulo2Result, modulo3Result, kpi1, kpi2, kpi3, decisiones = {}, hasEstado = false) {
+export function exportToExcel(modulo1Result, modulo2Result, modulo3Result, kpi1, kpi2, kpi3, decisiones = {}, hasEstado = false, m3Decisiones = {}) {
   const wb = XLSX.utils.book_new()
 
   // Sheet 1: Solicitudes Clasificadas
@@ -66,14 +66,17 @@ export function exportToExcel(modulo1Result, modulo2Result, modulo3Result, kpi1,
   XLSX.utils.book_append_sheet(wb, ws2, 'Pares Recurrentes')
 
   // Sheet 3: Sugerencias Sobrecupo
+  const decisionLabel = { confirmar: 'Confirmado', descartar: 'Descartado' }
   const sheet3Data = modulo3Result.sugeridos.map(c => ({
     'Nombre del Curso': c.curso,
     'NRC(s)': (c.nrcs || []).join(', '),
     'N° Períodos': c.numPeriodos,
-    '¿Sobrecupo?': 'Sí',
+    'Proyección Próximo Período': c.proyeccionProxPeriodo,
+    'Recomendación Sistema': c.recomendaSobrecupo ? 'Sí' : 'No',
+    'Decisión Coordinadora': decisionLabel[m3Decisiones[c.curso]] || 'Pendiente',
   }))
   const ws3 = XLSX.utils.json_to_sheet(sheet3Data)
-  setColWidths(ws3, [35, 20, 12, 12])
+  setColWidths(ws3, [35, 20, 12, 24, 22, 22])
   freezeHeader(ws3)
   XLSX.utils.book_append_sheet(wb, ws3, 'Sugerencias Sobrecupo')
 
