@@ -21,7 +21,7 @@ MVP para la gestión inteligente de solicitudes especiales de inscripción. Proc
 | Horario | No | NRC, TIPO DE REUNION, TITULO y columnas por día |
 | Cupos/restricciones | No | NRC, Cupos, Inscritos o Disponibles, Carrera Restringida, Observaciones |
 
-Se aceptan `Prioridad Académica`, `Prioridad Academica` o `Prioridad`. Un número mayor representa una prioridad mayor. Si no existe prioridad o un archivo opcional, el flujo anterior sigue funcionando.
+Se aceptan `Prioridad Académica`, `Prioridad Academica`, `Prioridad` o `PA`. Un número mayor representa una prioridad mayor. El grupo de prioridad académica se lee de `PA Grupo` (o `PA_Grupo`) y se muestra junto al valor numérico. Si no existe prioridad, grupo o un archivo opcional, el flujo anterior sigue funcionando.
 
 ## Requisitos
 

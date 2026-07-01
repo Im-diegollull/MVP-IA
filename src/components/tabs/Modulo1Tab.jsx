@@ -172,6 +172,7 @@ export default function Modulo1Tab({ m1, hasEstado, decisiones = {}, onDecision 
             <thead>
               <tr className="border-b border-slate-700">
                 <th className="text-left py-2 pr-3">ID</th>
+                <th className="text-left py-2 pr-3">RUT</th>
                 <th className="text-left py-2 pr-3">Prioridad</th>
                 <th className="text-left py-2 pr-3">Carrera</th>
                 <th className="text-left py-2 pr-3">Período</th>
@@ -191,8 +192,10 @@ export default function Modulo1Tab({ m1, hasEstado, decisiones = {}, onDecision 
                 return (
                   <tr key={i} className="border-b border-slate-700/40 hover:bg-slate-750">
                     <td className="py-1.5 pr-3">{r._id || '—'}</td>
+                    <td className="py-1.5 pr-3">{r._rutOriginal || '—'}</td>
                     <td className="py-1.5 pr-3 text-right font-semibold text-amber-300 tabular-nums">
                       {r._prioridadAcademica ?? '—'}
+                      {r._prioridadGrupo && <div className="text-[10px] font-normal text-slate-500">{r._prioridadGrupo}</div>}
                     </td>
                     <td className="py-1.5 pr-3">{r['Carrera'] || '—'}</td>
                     <td className="py-1.5 pr-3">{r['Catalogo'] || '—'}</td>
@@ -284,7 +287,10 @@ export default function Modulo1Tab({ m1, hasEstado, decisiones = {}, onDecision 
             <div className="sticky top-0 flex items-center justify-between gap-4 border-b border-slate-700 bg-slate-800 px-5 py-4">
               <div>
                 <h3 id="detalle-solicitud-title" className="text-base font-semibold text-white">Evidencia de la solicitud</h3>
-                <p className="text-xs text-slate-400">NRC {selectedRow['NRC'] || 'no informado'} · Prioridad {selectedRow._prioridadAcademica ?? 'no informada'}</p>
+                <p className="text-xs text-slate-400">
+                  NRC {selectedRow['NRC'] || 'no informado'} · RUT {selectedRow._rutOriginal || 'no informado'} · Prioridad {selectedRow._prioridadAcademica ?? 'no informada'}
+                  {selectedRow._prioridadGrupo ? ` (${selectedRow._prioridadGrupo})` : ''}
+                </p>
               </div>
               <button type="button" onClick={() => setSelectedRow(null)} className="w-8 h-8 rounded flex items-center justify-center bg-slate-700 text-slate-300 hover:bg-slate-600" aria-label="Cerrar detalle">×</button>
             </div>
@@ -322,7 +328,6 @@ export default function Modulo1Tab({ m1, hasEstado, decisiones = {}, onDecision 
                   <div><dt className="text-slate-500">Estado</dt><dd className="text-slate-200">{selectedRow._cupoEvidence?.estado || 'Sin evidencia'}</dd></div>
                   <div className="col-span-2"><dt className="text-slate-500">Carrera restringida</dt><dd className="text-slate-200">{selectedRow._cupoEvidence?.restriccion || 'No informada'}</dd></div>
                   <div className="col-span-2"><dt className="text-slate-500">Coincide con carrera</dt><dd className="text-slate-200">{selectedRow._cupoEvidence?.restriccion ? (selectedRow._cupoEvidence.restriccionCoincide ? 'Sí' : 'No') : 'No aplica'}</dd></div>
-                  <div className="col-span-2"><dt className="text-slate-500">Fuente</dt><dd className="text-slate-200">{selectedRow._cupoEvidence?.fuente || 'No informada'}</dd></div>
                   <div className="col-span-full"><dt className="text-slate-500">Observaciones</dt><dd className="text-slate-200 break-words">{selectedRow._cupoEvidence?.observaciones || 'Sin observaciones'}</dd></div>
                 </dl>
               </section>

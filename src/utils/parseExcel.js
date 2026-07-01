@@ -178,9 +178,10 @@ export function parseExcelFile(file) {
           headers.forEach((h, j) => {
             obj[h] = row[j] ?? ''
           })
-          // Anonymize RUT
+          // Anonymize RUT (se conserva el valor original solo en memoria para mostrarlo en pantalla)
           const rutField = headers.find(h => RUT_KEYWORDS.some(k => h.toLowerCase().includes(k)))
           if (rutField) {
+            obj['_rutOriginal'] = String(obj[rutField] ?? '').trim()
             obj['_id'] = anonymizeRut(rutMap, obj[rutField])
             obj[rutField] = `ANON-${obj['_id']}`
           }

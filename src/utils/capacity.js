@@ -39,7 +39,6 @@ export function getCapacityEvidence(requestRow, cuposMap = new Map()) {
   if (!hasEvidence) {
     return {
       estado: 'Sin evidencia',
-      fuente: 'No informada',
       cupos: null,
       inscritos: null,
       disponibles: null,
@@ -64,7 +63,6 @@ export function getCapacityEvidence(requestRow, cuposMap = new Map()) {
 
   return {
     estado,
-    fuente: externalRow ? 'Archivo de cupos' : 'Excel principal',
     cupos,
     inscritos,
     disponibles,

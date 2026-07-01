@@ -1,4 +1,4 @@
-import { getAcademicPriority, getField } from './fields.js'
+import { getAcademicPriority, getAcademicPriorityGroup, getField } from './fields.js'
 import { getCapacityEvidence } from './capacity.js'
 
 const REJECTION_CATEGORIES = ['Tope de Horario', 'Curso Ligado']
@@ -37,6 +37,7 @@ export function runModulo1(rows, hasEstado, nrcInfoMap = new Map(), cuposMap = n
     }
 
     const prioridad = getAcademicPriority(row)
+    const prioridadGrupo = getAcademicPriorityGroup(row)
     const cupoEvidence = getCapacityEvidence(row, cuposMap)
     if (clasificacion === 'Sin Clasificar' && (cupoEvidence.estado === 'Sin cupos' || cupoEvidence.restriccion)) {
       clasificacion = 'Revisión Manual'
@@ -56,6 +57,7 @@ export function runModulo1(rows, hasEstado, nrcInfoMap = new Map(), cuposMap = n
       _clasificacion: clasificacion,
       _origIdx: idx,
       _prioridadAcademica: prioridad,
+      _prioridadGrupo: prioridadGrupo,
       _cupoEvidence: cupoEvidence,
       _topeEvidence: topeEvidence,
       _topeDetalle: topeDetalle,

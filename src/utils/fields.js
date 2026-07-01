@@ -38,10 +38,14 @@ export function parseNumeric(value) {
 }
 
 export function getAcademicPriority(row) {
-  const aliases = new Set(['Prioridad Académica', 'Prioridad Academica', 'Prioridad'].map(normalizeKey))
+  const aliases = new Set(['Prioridad Académica', 'Prioridad Academica', 'Prioridad', 'PA'].map(normalizeKey))
   const values = Object.entries(row ?? {})
     .filter(([key]) => aliases.has(normalizeKey(key)))
     .map(([, value]) => parseNumeric(value))
     .filter(value => value !== null)
   return values.length ? Math.max(...values) : null
+}
+
+export function getAcademicPriorityGroup(row) {
+  return getField(row, 'PA Grupo', 'PA_Grupo', 'Grupo PA', 'Grupo Prioridad Académica', 'Grupo Prioridad Academica')
 }

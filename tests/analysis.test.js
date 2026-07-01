@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { getAcademicPriority } from '../src/utils/fields.js'
+import { getAcademicPriority, getAcademicPriorityGroup } from '../src/utils/fields.js'
 import { buildCuposMap, getCapacityEvidence } from '../src/utils/capacity.js'
 import { buildNrcInfoMap, validateClassPair } from '../src/utils/schedule.js'
 import { runModulo1 } from '../src/utils/modulo1.js'
@@ -13,7 +13,14 @@ test('extrae variantes de prioridad académica y conserva fallback nulo', () => 
   assert.equal(getAcademicPriority({ 'Prioridad Academica': 4 }), 4)
   assert.equal(getAcademicPriority({ Prioridad: '9,5' }), 9.5)
   assert.equal(getAcademicPriority({ Prioridad: 5, 'Prioridad Académica': 9 }), 9)
+  assert.equal(getAcademicPriority({ PA: '7' }), 7)
   assert.equal(getAcademicPriority({ Carrera: 'INGI' }), null)
+})
+
+test('extrae el grupo de prioridad académica desde la columna PA Grupo', () => {
+  assert.equal(getAcademicPriorityGroup({ 'PA Grupo': 'A' }), 'A')
+  assert.equal(getAcademicPriorityGroup({ 'PA_Grupo': '2' }), '2')
+  assert.equal(getAcademicPriorityGroup({ Carrera: 'INGI' }), '')
 })
 
 test('ordena revisión manual por la prioridad numérica más alta', () => {
